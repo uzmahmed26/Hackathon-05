@@ -1,0 +1,68 @@
+skill:
+  name: channel_adaptation
+  description: Adapt response tone and format for communication channel
+  model: qwen2.5-72b-instruct
+  temperature: 0.4
+  max_tokens: 300
+  
+  input_schema:
+    message:
+      type: string
+      description: Original response to adapt
+      required: true
+    channel:
+      type: string
+      enum: [email, whatsapp, web_form, live_chat, voice]
+      description: Communication channel
+      required: true
+    customer_profile:
+      type: object
+      properties:
+        sentiment:
+          type: float
+        customer_type:
+          type: string
+        preferences:
+          type: object
+          
+  output_schema:
+    adapted_message:
+      type: string
+      description: Channel-appropriate response
+    tone:
+      type: string
+      description: Tone of the adapted message
+    character_count:
+      type: integer
+      description: Length of adapted message
+      
+  system_prompt: |
+    You are a communication channel adaptation specialist.
+    Adapt the given message to be appropriate for the specified channel:
+    - Email: Formal, with proper greeting and closing
+    - WhatsApp: Casual, concise, under 300 characters
+    - Web Form: Semi-formal, 200-300 words
+    - Live Chat: Friendly, concise
+    - Voice: Simple, clear language
+    
+  examples:
+    - input:
+        message: "Thank you for your inquiry about password reset."
+        channel: email
+        customer_profile:
+          sentiment: 0.5
+          customer_type: regular
+      output:
+        adapted_message: "Dear Customer,\n\nThank you for your inquiry about password reset. Please follow these steps...\n\nBest regards,\nTechCorp Support"
+        tone: "formal"
+        character_count: 120
+    - input:
+        message: "Thank you for your inquiry about password reset."
+        channel: whatsapp
+        customer_profile:
+          sentiment: -0.3
+          customer_type: regular
+      output:
+        adapted_message: "Hey there! 😕 Thanks for reaching out about password reset. Here's how to do it quickly..."
+        tone: "casual"
+        character_count: 85

@@ -1,0 +1,76 @@
+skill:
+  name: customer_identification
+  description: Identify customer type and profile from available data
+  model: qwen2.5-72b-instruct
+  temperature: 0.1
+  max_tokens: 200
+  
+  input_schema:
+    identifier:
+      type: string
+      description: Customer identifier (email, phone, user_id)
+    anonymous_data:
+      type: object
+      description: Available data without direct identification
+      properties:
+        ip_address:
+          type: string
+        device_info:
+          type: string
+        session_data:
+          type: object
+          
+  output_schema:
+    customer_type:
+      type: string
+      enum: [guest, new, regular, premium, vip]
+    profile:
+      type: object
+      properties:
+        tenure:
+          type: string
+        engagement_level:
+          type: string
+        preferred_channel:
+          type: string
+        language_preference:
+          type: string
+    confidence:
+      type: float
+    privacy_level:
+      type: string
+      enum: [minimal, standard, full]
+      
+  system_prompt: |
+    You are a customer identification specialist.
+    Identify the customer type and profile based on available identifiers.
+    If no identifier provided, assess based on available anonymous data.
+    Return customer type and relevant profile information.
+    
+  examples:
+    - input:
+        identifier: "john.doe@example.com"
+      output:
+        customer_type: "regular"
+        profile:
+          tenure: "18 months"
+          engagement_level: "high"
+          preferred_channel: "email"
+          language_preference: "en"
+        confidence: 0.95
+        privacy_level: "standard"
+    - input:
+        identifier: null
+        anonymous_data:
+          ip_address: "192.168.1.100"
+          device_info: "iPhone 13, iOS 16"
+          session_data: {}
+      output:
+        customer_type: "guest"
+        profile:
+          tenure: "new"
+          engagement_level: "unknown"
+          preferred_channel: "unknown"
+          language_preference: "en"
+        confidence: 0.3
+        privacy_level: "minimal"

@@ -1,0 +1,61 @@
+skill:
+  name: escalation_decision
+  description: Determine if customer query requires human escalation
+  model: qwen2.5-72b-instruct
+  temperature: 0.2
+  max_tokens: 150
+  
+  input_schema:
+    message:
+      type: string
+      description: Customer message to evaluate
+      required: true
+    sentiment:
+      type: float
+      description: Sentiment score of the message
+      required: true
+    customer_type:
+      type: string
+      enum: [new, regular, premium, vip]
+      description: Type of customer
+    context:
+      type: string
+      description: Additional context for decision making
+      
+  output_schema:
+    should_escalate:
+      type: boolean
+      description: Whether to escalate to human agent
+    reason:
+      type: string
+      description: Reason for escalation decision
+    urgency:
+      type: string
+      enum: [low, medium, high, critical]
+      description: Urgency level of escalation
+      
+  system_prompt: |
+    You are an escalation specialist.
+    Determine if a customer query requires human intervention based on:
+    - Message content and sentiment
+    - Customer type (new, regular, premium, VIP)
+    - Keywords indicating need for human (pricing, legal, refund, etc.)
+    - Sentiment level (very negative sentiment may require human)
+    
+  examples:
+    - input:
+        message: "How much does the enterprise plan cost?"
+        sentiment: 0.2
+        customer_type: regular
+      output:
+        should_escalate: true
+        reason: "pricing inquiry"
+        urgency: "medium"
+    - input:
+        message: "This is terrible, I want to speak to a manager!"
+        sentiment: -0.9
+        customer_type: vip
+      output:
+        should_escalate: true
+        reason: "customer requested human and VIP status"
+        urgency: "critical"

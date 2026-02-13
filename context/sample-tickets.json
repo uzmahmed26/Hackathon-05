@@ -1,0 +1,352 @@
+[
+  {
+    "id": 1,
+    "channel": "email",
+    "category": "password_reset",
+    "query": "Subject: Password Reset Request\n\nDear Support Team,\n\nI am unable to access my TechCorp account as I have forgotten my password. Could you please assist me with resetting my password? My email address associated with the account is john.doe@company.com.\n\nThank you for your assistance.\n\nBest regards,\nJohn Doe",
+    "sentiment_score": 0.1
+  },
+  {
+    "id": 2,
+    "channel": "email",
+    "category": "feature_question",
+    "query": "Subject: Question About Time Tracking Feature\n\nHi,\n\nI'm trying to understand how the time tracking feature works in TechCorp. Does it automatically track time when I'm working on a task, or do I need to manually start the timer? Also, can I log time retroactively for work I've already completed?\n\nThanks,\nSarah Miller",
+    "sentiment_score": 0.3
+  },
+  {
+    "id": 3,
+    "channel": "email",
+    "category": "bug_report",
+    "query": "Subject: Bug Report - Notifications Not Working\n\nHello,\n\nI've been experiencing issues with notifications in TechCorp. Despite having them enabled in my settings, I'm not receiving email notifications for task updates or mentions. This is affecting my ability to stay on top of project changes.\n\nCould you please investigate this issue?\n\nRegards,\nMichael Chen",
+    "sentiment_score": -0.2
+  },
+  {
+    "id": 4,
+    "channel": "email",
+    "category": "feature_question",
+    "query": "Subject: Custom Fields Inquiry\n\nGood morning,\n\nI'm interested in knowing if TechCorp allows for custom fields in tasks. We have specific data points we track for each project that don't fit into the standard categories. Would appreciate your guidance on this matter.\n\nThank you,\nJennifer Adams",
+    "sentiment_score": 0.2
+  },
+  {
+    "id": 5,
+    "channel": "email",
+    "category": "pricing_inquiry",
+    "query": "Subject: Enterprise Plan Information\n\nDear Sales Team,\n\nOur company is looking to expand our use of TechCorp to include our entire organization of 150 employees. Could you provide information about your enterprise plan, including pricing and any volume discounts that might be available?\n\nLooking forward to your response.\n\nBest,\nRobert Johnson",
+    "sentiment_score": 0.4
+  },
+  {
+    "id": 6,
+    "channel": "email",
+    "category": "general_help",
+    "query": "Subject: Need Assistance Setting Up Projects\n\nHi Support,\n\nI'm new to TechCorp and need help setting up our first project. We're a marketing agency and want to use your platform for campaign management. Could you recommend best practices for structuring our projects?\n\nThanks,\nLisa Park",
+    "sentiment_score": 0.2
+  },
+  {
+    "id": 7,
+    "channel": "email",
+    "category": "bug_report",
+    "query": "Subject: Mobile App Crashes When Opening Attachments\n\nHello,\n\nI'm experiencing consistent crashes when trying to open PDF attachments in the TechCorp mobile app. This happens every time I tap on a PDF file. I'm using an iPhone 13 with the latest OS version.\n\nPlease advise.\n\nThanks,\nDavid Wilson",
+    "sentiment_score": -0.3
+  },
+  {
+    "id": 8,
+    "channel": "email",
+    "category": "feature_question",
+    "query": "Subject: Gantt Chart Dependencies\n\nHi Team,\n\nI'm trying to set up dependencies in the Gantt chart view but I'm not sure how to link tasks properly. Can you explain how to create a dependency where one task cannot start until another is completed?\n\nAppreciate the help.\n\nKind regards,\nEmma Thompson",
+    "sentiment_score": 0.1
+  },
+  {
+    "id": 9,
+    "channel": "email",
+    "category": "password_reset",
+    "query": "Subject: Urgent Password Reset Needed\n\nDear Support,\n\nI urgently need to reset my password as I have an important client presentation tomorrow that relies on accessing my TechCorp project data. Please assist as soon as possible.\n\nThank you,\nThomas Reed",
+    "sentiment_score": -0.1
+  },
+  {
+    "id": 10,
+    "channel": "email",
+    "category": "bug_report",
+    "query": "Subject: Calendar Integration Not Syncing\n\nHello,\n\nI connected my Google Calendar to TechCorp last week, but tasks are not syncing between the platforms. Events created in TechCorp are not appearing in my Google Calendar. Please help resolve this issue.\n\nBest,\nAmanda Foster",
+    "sentiment_score": -0.2
+  },
+  {
+    "id": 11,
+    "channel": "email",
+    "category": "angry_customer",
+    "query": "Subject: Complete Disappointment - Terrible Service!\n\nThis is absolutely ridiculous! I've been paying for the Professional plan for months and your platform keeps crashing during critical moments. Just yesterday, during an important client meeting, the entire system went down!\n\nI demand a refund immediately or I'll be taking legal action!\n\nFrustrated Customer",
+    "sentiment_score": -0.8
+  },
+  {
+    "id": 12,
+    "channel": "email",
+    "category": "feature_question",
+    "query": "Subject: Reporting Capabilities Query\n\nHi Support,\n\nI'm evaluating TechCorp for my team and wanted to know about the reporting capabilities. Can I create custom reports? Are there export options available? We need to share project metrics with stakeholders regularly.\n\nThanks,\nNathan Kim",
+    "sentiment_score": 0.3
+  },
+  {
+    "id": 13,
+    "channel": "email",
+    "category": "general_help",
+    "query": "Subject: Best Practices for Team Collaboration\n\nHello,\n\nWhat are the best practices for using TechCorp to improve team collaboration? We're transitioning from email-based communication and want to make the most of your platform.\n\nAny tips would be appreciated.\n\nBest regards,\nOlivia Martinez",
+    "sentiment_score": 0.4
+  },
+  {
+    "id": 14,
+    "channel": "email",
+    "category": "password_reset",
+    "query": "Subject: Password Reset Issue\n\nHi,\n\nI clicked the 'Forgot Password' link but didn't receive the reset email. I've checked my spam folder and it's not there. My account email is maria.santos@business.com. Please help.\n\nThanks,\nMaria Santos",
+    "sentiment_score": 0.0
+  },
+  {
+    "id": 15,
+    "channel": "email",
+    "category": "bug_report",
+    "query": "Subject: Export Function Not Working\n\nDear Support,\n\nWhen I try to export my project data to CSV, the process starts but never completes. The export remains stuck at 0%. This is preventing me from sharing reports with my management team.\n\nPlease fix this urgently.\n\nRegards,\nJames Wright",
+    "sentiment_score": -0.4
+  },
+  {
+    "id": 16,
+    "channel": "email",
+    "category": "feature_question",
+    "query": "Subject: Task Dependencies in Different Projects\n\nHi,\n\nCan I create dependencies between tasks that belong to different projects? For example, I have a marketing task that depends on the completion of a development task in another project.\n\nThanks for your help.\n\nBest,\nRachel Green",
+    "sentiment_score": 0.2
+  },
+  {
+    "id": 17,
+    "channel": "email",
+    "category": "pricing_inquiry",
+    "query": "Subject: Mid-Year Plan Change\n\nHello,\n\nOur team has grown significantly since we signed up for the Starter Plan. We now need more than 5 projects. Could you provide information about upgrading to the Professional Plan mid-billing cycle?\n\nThanks,\nAndrew Lee",
+    "sentiment_score": 0.3
+  },
+  {
+    "id": 18,
+    "channel": "email",
+    "category": "angry_customer",
+    "query": "Subject: Money Down the Drain\n\nI've wasted so much time trying to figure out your confusing interface. Nothing works as expected, and your tutorials are useless. I want my money back immediately!\n\nTerrible experience.\n\nAngry Customer",
+    "sentiment_score": -0.7
+  },
+  {
+    "id": 19,
+    "channel": "email",
+    "category": "general_help",
+    "query": "Subject: Importing Data from Trello\n\nHi,\n\nI'm migrating from Trello to TechCorp. What's the best way to import my boards and cards? Will all the data come through intact?\n\nThanks,\nSophie Turner",
+    "sentiment_score": 0.2
+  },
+  {
+    "id": 20,
+    "channel": "email",
+    "category": "password_reset",
+    "query": "Subject: Account Recovery Request\n\nDear TechCorp Team,\n\nI've lost access to the email account associated with my TechCorp account. The email was johndoe@oldcompany.com, but I no longer have access to it. How can I recover my account?\n\nThank you,\nJohn Doe",
+    "sentiment_score": -0.1
+  },
+  {
+    "id": 21,
+    "channel": "whatsapp",
+    "category": "password_reset",
+    "query": "Hey, I forgot my password for TechCorp. Can u help me reset it? My email is sam@test.com",
+    "sentiment_score": 0.1
+  },
+  {
+    "id": 22,
+    "channel": "whatsapp",
+    "category": "feature_question",
+    "query": "Hi, quick q - does TechCorp have time tracking? And can I bill clients based on hours logged?",
+    "sentiment_score": 0.3
+  },
+  {
+    "id": 23,
+    "channel": "whatsapp",
+    "category": "bug_report",
+    "query": "The app keeps crashing when I try to upload files. Happens every time. Plz fix!",
+    "sentiment_score": -0.4
+  },
+  {
+    "id": 24,
+    "channel": "whatsapp",
+    "category": "feature_question",
+    "query": "Can I set up automatic reminders for upcoming deadlines? My team misses too many due dates.",
+    "sentiment_score": 0.2
+  },
+  {
+    "id": 25,
+    "channel": "whatsapp",
+    "category": "pricing_inquiry",
+    "query": "Hey, what's the cost for 10 users? Thinking of upgrading from starter plan.",
+    "sentiment_score": 0.4
+  },
+  {
+    "id": 26,
+    "channel": "whatsapp",
+    "category": "general_help",
+    "query": "New to TechCorp. How do I add my team members to a project? Thx",
+    "sentiment_score": 0.2
+  },
+  {
+    "id": 27,
+    "channel": "whatsapp",
+    "category": "bug_report",
+    "query": "Notifications r not coming through on my phone. Checked settings and everything looks right. Plz help",
+    "sentiment_score": -0.2
+  },
+  {
+    "id": 28,
+    "channel": "whatsapp",
+    "category": "feature_question",
+    "query": "Is there a way to see who's working on what in real-time? Like a live status board?",
+    "sentiment_score": 0.3
+  },
+  {
+    "id": 29,
+    "channel": "whatsapp",
+    "category": "password_reset",
+    "query": "Need to reset password. Didn't get the email. Can u help?",
+    "sentiment_score": 0.0
+  },
+  {
+    "id": 30,
+    "channel": "whatsapp",
+    "category": "bug_report",
+    "query": "Gantt chart is showing wrong dates. Updated a task deadline but chart didn't refresh. Very confusing!",
+    "sentiment_score": -0.3
+  },
+  {
+    "id": 31,
+    "channel": "whatsapp",
+    "category": "angry_customer",
+    "query": "This app is terrible! Wasted hours of my life. Want refund NOW!",
+    "sentiment_score": -0.8
+  },
+  {
+    "id": 32,
+    "channel": "whatsapp",
+    "category": "feature_question",
+    "query": "Can I integrate with Slack? That's where my team communicates mostly.",
+    "sentiment_score": 0.4
+  },
+  {
+    "id": 33,
+    "channel": "whatsapp",
+    "category": "general_help",
+    "query": "How do I create templates for recurring projects? We do similar work every month.",
+    "sentiment_score": 0.3
+  },
+  {
+    "id": 34,
+    "channel": "whatsapp",
+    "category": "password_reset",
+    "query": "Reset my password for emma.collins@work.com. Didn't get email.",
+    "sentiment_score": 0.0
+  },
+  {
+    "id": 35,
+    "channel": "whatsapp",
+    "category": "bug_report",
+    "query": "Search function isn't working. I type keywords and nothing comes up. Very frustrating!",
+    "sentiment_score": -0.4
+  },
+  {
+    "id": 36,
+    "channel": "whatsapp",
+    "category": "feature_question",
+    "query": "Does TechCorp work offline? Sometimes I don't have internet when traveling.",
+    "sentiment_score": 0.2
+  },
+  {
+    "id": 37,
+    "channel": "whatsapp",
+    "category": "pricing_inquiry",
+    "query": "Do u offer discounts for non-profits? We're a charity org.",
+    "sentiment_score": 0.3
+  },
+  {
+    "id": 38,
+    "channel": "whatsapp",
+    "category": "angry_customer",
+    "query": "Absolutely disgusted with this service. Bugs everywhere, no support. Horrible experience!",
+    "sentiment_score": -0.9
+  },
+  {
+    "id": 39,
+    "channel": "whatsapp",
+    "category": "general_help",
+    "query": "How do I share a project dashboard with clients? They need to see progress.",
+    "sentiment_score": 0.2
+  },
+  {
+    "id": 40,
+    "channel": "whatsapp",
+    "category": "password_reset",
+    "query": "Locked out of account. Need help ASAP. Important project deadline today!",
+    "sentiment_score": -0.3
+  },
+  {
+    "id": 41,
+    "channel": "web_form",
+    "category": "password_reset",
+    "query": "I need to reset my password as I can no longer access my account. My email is contact@startup.com. Please assist promptly.",
+    "sentiment_score": 0.0
+  },
+  {
+    "id": 42,
+    "channel": "web_form",
+    "category": "feature_question",
+    "query": "I'm interested in learning more about the reporting features in TechCorp. Specifically, can I create custom dashboards that show project progress, team workload, and budget tracking in one view?",
+    "sentiment_score": 0.4
+  },
+  {
+    "id": 43,
+    "channel": "web_form",
+    "category": "bug_report",
+    "query": "There appears to be a bug in the time tracking feature. When I try to manually enter time that spans across multiple days, the system doesn't calculate the total correctly. This is affecting our billing accuracy.",
+    "sentiment_score": -0.3
+  },
+  {
+    "id": 44,
+    "channel": "web_form",
+    "category": "feature_question",
+    "query": "Does TechCorp offer API access for custom integrations? We have several proprietary tools that we'd like to connect with your platform.",
+    "sentiment_score": 0.3
+  },
+  {
+    "id": 45,
+    "channel": "web_form",
+    "category": "pricing_inquiry",
+    "query": "I represent a mid-size consulting firm with 25 employees. Could you provide a quote for an annual subscription to the Business Plan? We're looking to implement this across all our project teams.",
+    "sentiment_score": 0.5
+  },
+  {
+    "id": 46,
+    "channel": "web_form",
+    "category": "general_help",
+    "query": "I'm having difficulty understanding how to best utilize the collaboration features. We're a remote team and need to ensure seamless communication. Are there any best practices you could recommend?",
+    "sentiment_score": 0.2
+  },
+  {
+    "id": 47,
+    "channel": "web_form",
+    "category": "bug_report",
+    "query": "The file sharing feature is not working properly. Uploaded documents are not accessible to team members despite correct permissions being set. This is impacting our project delivery.",
+    "sentiment_score": -0.4
+  },
+  {
+    "id": 48,
+    "channel": "web_form",
+    "category": "angry_customer",
+    "query": "This platform is a complete disaster! We've been using TechCorp for 3 months and it's caused nothing but problems. Constant downtime, features don't work as advertised, and your support team is unresponsive. I demand an immediate refund of all fees paid!",
+    "sentiment_score": -0.9
+  },
+  {
+    "id": 49,
+    "channel": "web_form",
+    "category": "general_help",
+    "query": "We're a creative agency transitioning from spreadsheets. How can we best structure our client projects in TechCorp to track both creative tasks and billing hours?",
+    "sentiment_score": 0.3
+  },
+  {
+    "id": 50,
+    "channel": "web_form",
+    "category": "password_reset",
+    "query": "I've tried resetting my password multiple times but keep getting an error message. My account email is designer@creative.com. Please help me regain access to my account.",
+    "sentiment_score": -0.2
+  }
+]

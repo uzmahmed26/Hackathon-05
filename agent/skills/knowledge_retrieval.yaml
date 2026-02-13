@@ -1,0 +1,45 @@
+skill:
+  name: knowledge_retrieval
+  description: Search product documentation semantically for relevant answers
+  model: qwen2.5-72b-instruct
+  temperature: 0.3
+  max_tokens: 500
+  
+  input_schema:
+    query:
+      type: string
+      description: Customer's question to search for
+      required: true
+    max_results:
+      type: integer
+      description: Maximum number of results to return
+      default: 5
+      
+  output_schema:
+    results:
+      type: array
+      items:
+        type: object
+        properties:
+          title: string
+          content: string
+          relevance: float
+    confidence:
+      type: float
+      description: Overall confidence in search results
+      
+  system_prompt: |
+    You are a knowledge base search specialist.
+    Given a customer query, find the most relevant documentation.
+    Return results with relevance scores (0-1).
+    
+  examples:
+    - input:
+        query: "How do I reset my password?"
+        max_results: 3
+      output:
+        results:
+          - title: "Password Reset Guide"
+            content: "To reset your password, click 'Forgot Password' on the login page..."
+            relevance: 0.95
+        confidence: 0.9

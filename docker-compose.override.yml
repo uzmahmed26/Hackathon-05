@@ -1,0 +1,23 @@
+# Override file for local development
+version: '3.9'
+
+services:
+  api:
+    # Mount volumes for hot-reloading during development
+    volumes:
+      - .:/app
+      - ./credentials:/app/credentials:ro
+      # Exclude .git and __pycache__ for performance
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    # Enable reloading for development
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload --debug
+
+  worker:
+    volumes:
+      - .:/app
+      - ./credentials:/app/credentials:ro
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG

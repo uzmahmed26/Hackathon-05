@@ -1,0 +1,34 @@
+skill:
+  name: sentiment_analysis
+  description: Analyze customer sentiment and emotional state
+  model: qwen2.5-72b-instruct
+  temperature: 0.1
+  max_tokens: 100
+  
+  input_schema:
+    message:
+      type: string
+      description: Customer message to analyze
+      required: true
+      
+  output_schema:
+    sentiment:
+      type: float
+      description: Sentiment score from -1 (very negative) to 1 (very positive)
+    emotion:
+      type: string
+      enum: [happy, neutral, frustrated, angry, confused, grateful]
+    confidence:
+      type: float
+      
+  system_prompt: |
+    Analyze the sentiment and emotion in customer messages.
+    Return a sentiment score from -1 to 1 and identify the primary emotion.
+    
+  examples:
+    - input:
+        message: "This is TERRIBLE! I'm so frustrated!"
+      output:
+        sentiment: -0.8
+        emotion: "angry"
+        confidence: 0.95
