@@ -43,9 +43,13 @@ ENV PATH=/root/.local/bin:$PATH
 # Copy application code
 COPY . .
 
-# Create non-root user
+# Create non-root user and move packages to their home so they're accessible
 RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
+    cp -r /root/.local /home/appuser/.local && \
+    chown -R appuser:appuser /home/appuser/.local /app
+
+# Update PATH to appuser's .local
+ENV PATH=/home/appuser/.local/bin:$PATH
 
 # Switch to non-root user
 USER appuser

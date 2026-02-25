@@ -12,33 +12,29 @@ from datetime import datetime
 
 # Set test environment
 os.environ['TESTING'] = 'true'
-os.environ['DATABASE_URL'] = 'postgresql://fte_user:fte_password@localhost:5432/fte_test_db'
+os.environ['DATABASE_URL'] = 'postgresql://fte_user:fte_password@localhost:5433/fte_db'
 os.environ['REDIS_URL'] = 'redis://localhost:6379/1'  # Use DB 1 for tests
 
 from api.main import app
 from database.queries import DatabaseManager
 from infrastructure.redis_queue import RedisProducer
 
-# Async test support
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create event loop for async tests"""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+# Async test support (pytest-asyncio handles event loop automatically in auto mode)
 
 # Database fixtures
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 async def db_manager():
     """Create database manager for tests"""
     manager = DatabaseManager(dsn=os.getenv('DATABASE_URL'))
     await manager.connect()
     
-    # Create test schema
+    # Schema already applied by Docker init; skip if tables exist
     async with manager.pool.acquire() as conn:
-        # Run schema
-        with open('database/schema.sql', 'r') as f:
-            await conn.execute(f.read())
+        try:
+            with open('database/schema.sql', 'r') as f:
+                await conn.execute(f.read())
+        except Exception:
+            pass  # Tables already exist
     
     yield manager
     
@@ -59,7 +55,7 @@ async def db_conn(db_manager):
         await tr.rollback()
 
 # Redis fixtures
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 async def redis_producer():
     """Create Redis producer for tests"""
     producer = RedisProducer()
@@ -94,7 +90,9 @@ async def redis_clean(redis_producer):
 @pytest.fixture
 async def api_client() -> AsyncGenerator[AsyncClient, None]:
     """Create HTTP client for API testing"""
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    import httpx
+    transport = httpx.ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
 
 # Test data fixtures
@@ -165,11 +163,9 @@ def mock_agent_response():
         'escalation_reason': None
     }
 
-# Cleanup fixture
+# Cleanup fixture (sync - no async needed here)
 @pytest.fixture(autouse=True)
-async def cleanup():
+def cleanup():
     """Run before and after each test"""
-    # Setup code here
     yield
-    # Teardown code here
-    pass
+    # Teardown code here (sync)

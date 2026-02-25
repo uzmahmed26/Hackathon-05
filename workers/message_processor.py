@@ -9,6 +9,7 @@ import logging
 import json
 import sys
 import signal
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from uuid import UUID
@@ -56,15 +57,36 @@ class UnifiedMessageProcessor:
     async def initialize(self):
         """Initialize all components."""
         logger.info("Initializing message processor...")
-        
+
         # Connect to database
         await self.db_manager.connect()
-        
+
         # Connect to Redis
         # In a real implementation, we would initialize the Redis consumer
-        
+
         logger.info("Message processor initialized successfully")
-    
+
+    async def cleanup(self):
+        """Clean up all components on shutdown."""
+        logger.info("Cleaning up message processor...")
+        self.running = False
+        try:
+            if self.db_manager and self.db_manager.pool:
+                await self.db_manager.close()
+        except Exception as e:
+            logger.warning(f"Error closing DB during cleanup: {e}")
+        logger.info("Message processor cleanup complete")
+
+    @asynccontextmanager
+    async def _get_conn(self):
+        """Get a DB connection from either pool or direct connection (for tests)."""
+        pool = self.db_manager.pool
+        if hasattr(pool, 'acquire'):
+            async with pool.acquire() as conn:
+                yield conn
+        else:
+            yield pool  # Already a raw connection (test injection)
+
     async def start(self):
         """Start the message processor worker."""
         logger.info("Starting message processor worker...")
@@ -217,7 +239,7 @@ class UnifiedMessageProcessor:
         - If email matches existing customer → link phone to that customer
         - If phone matches existing customer → link email to that customer
         """
-        async with self.db_manager.pool.acquire() as conn:
+        async with self._get_conn() as conn:
             email = message.get('customer_email')
             phone = message.get('customer_phone')
             name = message.get('customer_name', '')
@@ -283,7 +305,7 @@ class UnifiedMessageProcessor:
         Active conversation = started within last 24 hours and status is 'active'
         If no active conversation exists, create new one.
         """
-        async with self.db_manager.pool.acquire() as conn:
+        async with self._get_conn() as conn:
             # Check for active conversation
             conversation = await conn.fetchrow("""
                 SELECT id FROM conversations
@@ -318,7 +340,7 @@ class UnifiedMessageProcessor:
             ...
         ]
         """
-        async with self.db_manager.pool.acquire() as conn:
+        async with self._get_conn() as conn:
             messages = await conn.fetch("""
                 SELECT role, content, created_at
                 FROM messages
@@ -349,7 +371,7 @@ class UnifiedMessageProcessor:
         metadata: Dict = None
     ):
         """Store message in database with all metadata"""
-        async with self.db_manager.pool.acquire() as conn:
+        async with self._get_conn() as conn:
             await conn.execute("""
                 INSERT INTO messages (
                     conversation_id,

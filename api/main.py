@@ -12,7 +12,7 @@ import logging
 from datetime import datetime
 import time
 import asyncio
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import asyncpg
 import redis.asyncio as redis
 
@@ -53,6 +53,9 @@ async def lifespan(app: FastAPI):
     logger.info("Starting up application...")
     
     # Startup
+    app.state.db_manager = None
+    app.state.redis_producer = None
+
     try:
         # Initialize database manager
         import os
@@ -60,24 +63,21 @@ async def lifespan(app: FastAPI):
         app.state.db_manager = DatabaseManager(dsn=db_url)
         await app.state.db_manager.connect()
         logger.info("Database manager initialized")
-        
+    except Exception as e:
+        logger.warning(f"Database unavailable (running in degraded mode): {e}")
+        app.state.db_manager = None
+
+    try:
         # Initialize Redis producer
         redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
         app.state.redis_producer = RedisProducer(redis_url=redis_url)
         await app.state.redis_producer._ensure_connection()
         logger.info("Redis producer initialized")
-        
-        # Verify Gmail handler
-        # (Add verification code if needed)
-        
-        # Verify WhatsApp handler
-        # (Add verification code if needed)
-        
-        logger.info("Application startup complete")
-        
     except Exception as e:
-        logger.error(f"Startup failed: {e}")
-        raise
+        logger.warning(f"Redis unavailable (running in degraded mode): {e}")
+        app.state.redis_producer = None
+
+    logger.info("Application startup complete")
     
     yield  # Application is running
     
@@ -107,6 +107,11 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan
 )
+
+# Set default state values so endpoints work even when lifespan hasn't run
+# (e.g., in tests that use ASGITransport without triggering lifespan events)
+app.state.db_manager = None
+app.state.redis_producer = None
 
 # CORS middleware
 app.add_middleware(
@@ -165,11 +170,27 @@ async def log_requests(request: Request, call_next):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Handle validation errors"""
+    import json
+
+    def _make_serializable(obj):
+        if isinstance(obj, dict):
+            return {k: _make_serializable(v) for k, v in obj.items()}
+        if isinstance(obj, (list, tuple)):
+            return [_make_serializable(i) for i in obj]
+        if isinstance(obj, Exception):
+            return str(obj)
+        try:
+            json.dumps(obj)
+            return obj
+        except TypeError:
+            return str(obj)
+
+    errors = _make_serializable(exc.errors())
     return JSONResponse(
         status_code=422,
         content={
             "detail": "Validation error",
-            "errors": exc.errors()
+            "errors": errors
         }
     )
 
@@ -187,9 +208,9 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
 
 
-# Include routers
-app.include_router(gmail_router, prefix="/webhooks", tags=["webhooks"])
-app.include_router(whatsapp_router, prefix="/webhooks", tags=["webhooks"])
+# Include routers (routers already define their own prefixes internally)
+app.include_router(gmail_router)
+app.include_router(whatsapp_router)
 app.include_router(webform_router, prefix="/api", tags=["support"])
 
 
@@ -217,6 +238,8 @@ async def health_check():
     
     # Check database
     try:
+        if app.state.db_manager is None:
+            raise RuntimeError("Database manager not initialized")
         # Test database connection
         async with app.state.db_manager.pool.acquire() as conn:
             await conn.fetchval("SELECT 1")
@@ -224,9 +247,11 @@ async def health_check():
     except Exception as e:
         health["services"]["database"] = f"unhealthy: {str(e)}"
         health["status"] = "unhealthy"
-    
+
     # Check Redis
     try:
+        if app.state.redis_producer is None:
+            raise RuntimeError("Redis producer not initialized")
         await app.state.redis_producer.client.ping()
         health["services"]["redis"] = "healthy"
     except Exception as e:
@@ -283,6 +308,9 @@ async def metrics():
     - Error rates
     - Latency percentiles
     """
+    if app.state.db_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Database unavailable"})
+
     async with app.state.db_manager.pool.acquire() as conn:
         # Last 24 hours stats
         stats = await conn.fetchrow("""
@@ -341,9 +369,12 @@ async def channel_metrics():
     - Escalation rate per channel
     - Average sentiment per channel
     """
+    if app.state.db_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Database unavailable"})
+
     async with app.state.db_manager.pool.acquire() as conn:
         metrics = await conn.fetch("""
-            SELECT 
+            SELECT
                 c.initial_channel as channel,
                 COUNT(DISTINCT c.id) as total_conversations,
                 AVG(c.sentiment_score) as avg_sentiment,
@@ -367,6 +398,59 @@ async def channel_metrics():
         }
     
     return result
+
+
+# ─── Helper stubs (mockable by tests) ─────────────────────────────────────────
+
+async def find_customer(email: str = None, phone: str = None) -> Optional[Dict[str, Any]]:
+    """Look up a customer by email or phone."""
+    if app.state.db_manager is None:
+        return None
+    async with app.state.db_manager.pool.acquire() as conn:
+        if email:
+            row = await conn.fetchrow("SELECT * FROM customers WHERE email = $1", email)
+        elif phone:
+            row = await conn.fetchrow("SELECT * FROM customers WHERE phone = $1", phone)
+        else:
+            return None
+        return dict(row) if row else None
+
+
+async def load_conversation_history(conversation_id: str) -> Optional[Dict[str, Any]]:
+    """Load conversation history by ID."""
+    if app.state.db_manager is None:
+        return None
+    async with app.state.db_manager.pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT * FROM conversations WHERE id = $1", conversation_id
+        )
+        return dict(row) if row else None
+
+
+# ─── Customer endpoints ────────────────────────────────────────────────────────
+
+@app.get("/customers/lookup")
+async def lookup_customer(email: str = None, phone: str = None):
+    """Look up a customer by email or phone."""
+    if not email and not phone:
+        from fastapi.responses import JSONResponse as _JSONResponse
+        return _JSONResponse(
+            status_code=400,
+            content={"detail": "email or phone query parameter required"}
+        )
+    customer = await find_customer(email=email, phone=phone)
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    return customer
+
+
+@app.get("/conversations/{conversation_id}")
+async def get_conversation(conversation_id: str):
+    """Get conversation history by ID."""
+    history = await load_conversation_history(conversation_id)
+    if not history:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return history
 
 
 # Root endpoint

@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fte-api
+  namespace: customer-success-fte
+  labels:
+    app: customer-success-fte
+    component: api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: customer-success-fte
+      component: api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: customer-success-fte
+        component: api
+    spec:
+      containers:
+        - name: fte-api
+          image: your-registry/customer-success-fte:latest
+          imagePullPolicy: Always
+          command:
+            - uvicorn
+            - api.main:app
+            - --host
+            - "0.0.0.0"
+            - --port
+            - "8000"
+            - --workers
+            - "4"
+          ports:
+            - containerPort: 8000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: fte-config
+            - secretRef:
+                name: fte-secrets
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          volumeMounts:
+            - name: gmail-credentials
+              mountPath: /app/credentials
+              readOnly: true
+      volumes:
+        - name: gmail-credentials
+          secret:
+            secretName: fte-secrets
+            items:
+              - key: GMAIL_CREDENTIALS
+                path: gmail_credentials.json
+      terminationGracePeriodSeconds: 30

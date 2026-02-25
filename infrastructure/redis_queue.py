@@ -3,7 +3,7 @@ Redis-based message queue system for Customer Success AI
 Implements Redis Streams with consumer groups, retry logic, and dead letter queue
 """
 
-import aioredis
+import redis.asyncio as aioredis
 import asyncio
 import logging
 import uuid
@@ -260,7 +260,7 @@ class RedisQueue:
             # Try to create the consumer group
             await self.client.xgroup_create(stream, group, id='0', mkstream=True)
             self.logger.info(f"Created consumer group '{group}' for stream '{stream}'")
-        except aioredis.ResponseError as e:
+        except aioredis.exceptions.ResponseError as e:
             if 'BUSYGROUP' in str(e):
                 # Group already exists, which is fine
                 self.logger.debug(f"Consumer group '{group}' already exists for stream '{stream}'")
@@ -407,6 +407,16 @@ class RedisProducer:
         self._connected = False
         self.logger = logging.getLogger(__name__)
     
+    async def connect(self):
+        """Establish connection to Redis."""
+        await self._ensure_connection()
+
+    async def disconnect(self):
+        """Close the Redis connection."""
+        if self.client:
+            await self.client.aclose()
+            self._connected = False
+
     async def _ensure_connection(self):
         """Ensure Redis connection is established."""
         if not self._connected or not self.client:
@@ -538,7 +548,7 @@ class RedisConsumer:
         # Create consumer group
         try:
             await self.client.xgroup_create(stream, group, id='0', mkstream=True)
-        except aioredis.ResponseError as e:
+        except aioredis.exceptions.ResponseError as e:
             if 'BUSYGROUP' not in str(e):
                 raise
         

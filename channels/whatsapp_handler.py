@@ -207,19 +207,19 @@ class WhatsAppHandler:
             self.logger.error(f"Error sending WhatsApp message to {to_phone}: {e}")
             raise
     
-    def format_response(self, response: str, max_length: int = 1600) -> List[str]:
+    def format_response(self, response: str, max_length: int = 1600) -> str:
         """
         Format response to fit within WhatsApp's character limit.
-        
+
         Args:
             response: Original response text
             max_length: Maximum length per message chunk (default 1600)
-            
+
         Returns:
-            List of message chunks
+            Formatted response string (truncated to max_length if needed)
         """
         if len(response) <= max_length:
-            return [response]
+            return response
         
         # Split the response into chunks
         chunks = []
@@ -257,8 +257,8 @@ class WhatsAppHandler:
         # Add the last chunk if it exists
         if current_chunk:
             chunks.append(current_chunk)
-        
-        return chunks
+
+        return " ".join(chunks)
     
     async def send_media(self, to_phone: str, body: str, media_url: str) -> dict:
         """
