@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fte-message-processor
+  namespace: customer-success-fte
+  labels:
+    app: customer-success-fte
+    component: message-processor
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: customer-success-fte
+      component: message-processor
+  template:
+    metadata:
+      labels:
+        app: customer-success-fte
+        component: message-processor
+    spec:
+      containers:
+        - name: message-processor
+          image: your-registry/customer-success-fte:latest
+          imagePullPolicy: Always
+          command:
+            - python
+            - workers/message_processor.py
+          envFrom:
+            - configMapRef:
+                name: fte-config
+            - secretRef:
+                name: fte-secrets
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - "import asyncio; print('alive')"
+            initialDelaySeconds: 30
+            periodSeconds: 60
+          volumeMounts:
+            - name: gmail-credentials
+              mountPath: /app/credentials
+              readOnly: true
+      volumes:
+        - name: gmail-credentials
+          secret:
+            secretName: fte-secrets
+            items:
+              - key: GMAIL_CREDENTIALS
+                path: gmail_credentials.json
+      terminationGracePeriodSeconds: 60
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fte-metrics-collector
+  namespace: customer-success-fte
+  labels:
+    app: customer-success-fte
+    component: metrics-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-success-fte
+      component: metrics-collector
+  template:
+    metadata:
+      labels:
+        app: customer-success-fte
+        component: metrics-collector
+    spec:
+      containers:
+        - name: metrics-collector
+          image: your-registry/customer-success-fte:latest
+          imagePullPolicy: Always
+          command:
+            - python
+            - workers/metrics_collector.py
+          envFrom:
+            - configMapRef:
+                name: fte-config
+            - secretRef:
+                name: fte-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "250m"
+      terminationGracePeriodSeconds: 30

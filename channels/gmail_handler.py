@@ -78,13 +78,13 @@ class GmailHandler:
     def __init__(self, credentials_path: str):
         """
         Initialize the Gmail handler.
-        
+
         Args:
             credentials_path: Path to saved credentials JSON file
         """
         self.credentials_path = credentials_path
-        self.service = self._load_service()
         self.logger = logging.getLogger(__name__)
+        self.service = self._load_service()
     
     def _load_service(self):
         """Load the Gmail API service."""
@@ -106,8 +106,8 @@ class GmailHandler:
             service = build('gmail', 'v1', credentials=creds)
             return service
         except Exception as e:
-            self.logger.error(f"Failed to load Gmail service: {e}")
-            raise
+            self.logger.warning(f"Gmail service unavailable (credentials not found or invalid): {e}")
+            return None  # Service is None when credentials are missing
     
     async def setup_push_notifications(self, webhook_url: str) -> dict:
         """
@@ -434,3 +434,49 @@ class GmailHandler:
         except Exception as e:
             self.logger.error(f"Unexpected error fetching thread {thread_id}: {e}")
             raise
+
+    def extract_message_data(self, message: dict) -> dict:
+        """
+        Extract normalized data from a Gmail API message dict.
+
+        Args:
+            message: Gmail API message object with payload.headers and payload.body
+
+        Returns:
+            Dict with sender, subject, content, and thread_id keys
+        """
+        headers = message.get('payload', {}).get('headers', [])
+        header_map = {h['name']: h['value'] for h in headers}
+
+        sender = header_map.get('From', '')
+        subject = header_map.get('Subject', '')
+        thread_id = message.get('threadId', '')
+
+        # Decode base64 body content
+        body_data = message.get('payload', {}).get('body', {}).get('data', '')
+        if body_data:
+            try:
+                content = base64.urlsafe_b64decode(body_data + '==').decode('utf-8')
+            except Exception:
+                content = message.get('snippet', '')
+        else:
+            content = message.get('snippet', '')
+
+        return {
+            'sender': sender,
+            'subject': subject,
+            'content': content,
+            'thread_id': thread_id,
+        }
+
+    def format_response(self, response: str) -> str:
+        """
+        Format a plain text response for email delivery.
+
+        Args:
+            response: The raw response text
+
+        Returns:
+            Formatted email body string
+        """
+        return f"Dear Customer,\n\n{response}\n\nBest regards,\nTechCorp Support Team"

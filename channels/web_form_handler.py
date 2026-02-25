@@ -3,8 +3,9 @@ Web Form Handler for Customer Success AI
 FastAPI endpoints for handling web form submissions
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from pydantic import BaseModel, EmailStr, validator
+import re
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
+from pydantic import BaseModel, validator
 from typing import Optional, List
 from datetime import datetime
 import uuid
@@ -19,6 +20,32 @@ from database.queries import (
     store_message,
     create_ticket
 )
+
+class WebFormHandler:
+    """Handler for processing web form submissions."""
+
+    def process_form_data(self, form_data: dict) -> dict:
+        """
+        Normalize raw web form data into a standard message dict.
+
+        Args:
+            form_data: Raw form submission dict with name, email, subject, etc.
+
+        Returns:
+            Normalized dict with customer_name, customer_email, content, and metadata keys
+        """
+        return {
+            'channel': 'web_form',
+            'customer_name': form_data.get('name', ''),
+            'customer_email': form_data.get('email', ''),
+            'subject': form_data.get('subject', ''),
+            'content': form_data.get('message', ''),
+            'category': form_data.get('category', 'general'),
+            'metadata': {
+                'form_version': '1.0',
+            },
+        }
+
 
 # Initialize router
 router = APIRouter(prefix="/support", tags=["web_form"])
@@ -49,12 +76,20 @@ class PriorityEnum(str, Enum):
 class SupportFormSubmission(BaseModel):
     """Request model for support form submission."""
     name: str
-    email: EmailStr
+    email: str
     subject: str
     category: CategoryEnum
     priority: PriorityEnum = PriorityEnum.MEDIUM
     message: str
     attachments: Optional[List[str]] = []
+
+    @validator('email')
+    def validate_email(cls, v):
+        """Validate email format."""
+        v = v.strip()
+        if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', v):
+            raise ValueError('Invalid email address')
+        return v.lower()
 
     @validator('name')
     def validate_name(cls, v):
@@ -104,17 +139,23 @@ class TicketStatusResponse(BaseModel):
 
 
 # Background task to process the submission
-async def process_support_submission(submission: SupportFormSubmission, ticket_id: str):
+async def process_support_submission(submission: SupportFormSubmission, ticket_id: str, db_manager=None):
     """
     Background task to process support form submission.
-    
+
     Args:
         submission: The validated submission data
         ticket_id: The generated ticket ID
+        db_manager: DatabaseManager instance (optional, used when available)
     """
+    if db_manager is None:
+        logger.warning("db_manager unavailable, skipping DB operations for web form submission")
+        return
+
     try:
         # 1. Get or create customer
         customer_id = await get_or_create_customer(
+            db_manager,
             email=submission.email,
             name=submission.name
         )
@@ -122,6 +163,7 @@ async def process_support_submission(submission: SupportFormSubmission, ticket_i
 
         # 2. Create conversation
         conversation_id = await create_conversation(
+            db_manager,
             customer_id=customer_id,
             channel='web_form'
         )
@@ -129,6 +171,7 @@ async def process_support_submission(submission: SupportFormSubmission, ticket_i
 
         # 3. Store message
         await store_message(
+            db_manager,
             conversation_id=conversation_id,
             channel='web_form',
             direction='inbound',
@@ -139,6 +182,7 @@ async def process_support_submission(submission: SupportFormSubmission, ticket_i
 
         # 4. Create ticket
         ticket = await create_ticket(
+            db_manager,
             customer_id=customer_id,
             conversation_id=conversation_id,
             source_channel='web_form',
@@ -176,12 +220,13 @@ async def process_support_submission(submission: SupportFormSubmission, ticket_i
 
 @router.post("/submit", response_model=SupportFormResponse)
 async def submit_support_form(
+    request: Request,
     submission: SupportFormSubmission,
     background_tasks: BackgroundTasks
 ):
     """
     Handle web form submission.
-    
+
     Flow:
     1. Validate submission (Pydantic does this automatically)
     2. Generate ticket_id (UUID)
@@ -191,7 +236,7 @@ async def submit_support_form(
     6. Create ticket record
     7. Publish to Redis tickets:incoming queue
     8. Return ticket_id immediately (don't wait for agent)
-    
+
     Returns:
     - ticket_id: For tracking
     - message: Confirmation message
@@ -202,8 +247,11 @@ async def submit_support_form(
         ticket_id = str(uuid.uuid4())
         logger.info(f"Processing support form submission with ticket ID: {ticket_id}")
 
+        # Get db_manager from app state if available
+        db_manager = getattr(request.app.state, 'db_manager', None)
+
         # Add background task to process the submission
-        background_tasks.add_task(process_support_submission, submission, ticket_id)
+        background_tasks.add_task(process_support_submission, submission, ticket_id, db_manager)
 
         # Return response immediately
         return SupportFormResponse(

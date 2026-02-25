@@ -51,7 +51,10 @@ async def whatsapp_webhook(request: Request):
         logger.info(f"Received WhatsApp message from {normalized_message['customer_phone']}: {normalized_message['content'][:50]}...")
         
         # Publish to Redis queue for processing by the agent
-        redis_client.lpush('whatsapp_messages', json.dumps(normalized_message))
+        try:
+            redis_client.lpush('whatsapp_messages', json.dumps(normalized_message))
+        except Exception as redis_err:
+            logger.warning(f"Redis unavailable, message not queued: {redis_err}")
         
         # Return empty TwiML response as required by Twilio
         return Response(

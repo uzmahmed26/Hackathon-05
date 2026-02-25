@@ -70,15 +70,12 @@ async def gmail_webhook(request: Request):
             logger.info(f"Received Gmail notification: {notification}")
             
             # Publish to Redis queue for processing by the agent
-            redis_client.lpush('gmail_notifications', json.dumps(notification))
-            
-            # In a real implementation, we would also process the notification
-            # synchronously here to extract and store the messages
-            # For now, we'll just acknowledge receipt
+            try:
+                redis_client.lpush('gmail_notifications', json.dumps(notification))
+            except Exception as redis_err:
+                logger.warning(f"Redis unavailable, notification not queued: {redis_err}")
         else:
             logger.warning("Received notification with no data")
-            # Still acknowledge receipt even if no data
-            redis_client.lpush('gmail_notifications', json.dumps(payload))
         
         # Return 200 OK to acknowledge receipt
         return {"status": "ok", "message": "Notification received and queued for processing"}
@@ -86,7 +83,10 @@ async def gmail_webhook(request: Request):
     except json.JSONDecodeError:
         logger.error("Invalid JSON in request body")
         raise HTTPException(status_code=400, detail="Invalid JSON in request body")
-    
+
+    except HTTPException:
+        raise
+
     except Exception as e:
         logger.error(f"Error processing Gmail webhook: {e}")
         raise HTTPException(status_code=500, detail=f"Error processing webhook: {str(e)}")

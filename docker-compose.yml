@@ -58,28 +58,36 @@ services:
       
       # Redis
       REDIS_URL: redis://redis:6379
-      
+
+      # Kafka
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
       # LLM API (add your keys)
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       HF_TOKEN: ${HF_TOKEN:-}
-      
+      OPENAI_MODEL: gpt-4o
+
       # Gmail
       GMAIL_CREDENTIALS_PATH: /app/credentials/gmail_credentials.json
-      
+      GMAIL_CLIENT_ID: ${GMAIL_CLIENT_ID:-}
+      GMAIL_CLIENT_SECRET: ${GMAIL_CLIENT_SECRET:-}
+
       # Twilio
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
       TWILIO_WHATSAPP_NUMBER: ${TWILIO_WHATSAPP_NUMBER:-}
-      
+
       # Application
       LOG_LEVEL: DEBUG
       DEBUG: "true"
-      
+
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      kafka:
+        condition: service_started
     networks:
       - fte-network
     restart: unless-stopped
@@ -99,27 +107,33 @@ services:
       
       # Redis
       REDIS_URL: redis://redis:6379
-      
+
+      # Kafka
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
       # LLM API
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       HF_TOKEN: ${HF_TOKEN:-}
-      
+      OPENAI_MODEL: gpt-4o
+
       # Gmail
       GMAIL_CREDENTIALS_PATH: /app/credentials/gmail_credentials.json
-      
+
       # Twilio
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
       TWILIO_WHATSAPP_NUMBER: ${TWILIO_WHATSAPP_NUMBER:-}
-      
+
       # Application
       LOG_LEVEL: DEBUG
-      
+
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      kafka:
+        condition: service_started
       api:
         condition: service_started
     networks:
@@ -127,6 +141,82 @@ services:
     restart: unless-stopped
     deploy:
       replicas: 2  # Run 2 worker instances
+
+  # Zookeeper (required for Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: fte-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - fte-network
+    restart: unless-stopped
+
+  # Apache Kafka (Event Streaming)
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: fte-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 168
+    networks:
+      - fte-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Kafka UI (Development only)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: fte-kafka-ui
+    depends_on:
+      - kafka
+    ports:
+      - "8082:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: fte-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    networks:
+      - fte-network
+    profiles:
+      - dev
+
+  # Metrics Collector Worker
+  metrics-collector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python workers/metrics_collector.py
+    volumes:
+      - .:/app
+    environment:
+      DATABASE_URL: postgresql://fte_user:fte_password@postgres:5432/fte_db
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      REDIS_URL: redis://redis:6379
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      LOG_LEVEL: DEBUG
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - fte-network
+    restart: unless-stopped
 
   # Redis Commander (Web UI for Redis - Development only)
   redis-commander:
@@ -164,6 +254,10 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  kafka_data:
+    driver: local
+  zookeeper_data:
     driver: local
 
 networks:
