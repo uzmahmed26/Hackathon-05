@@ -10,36 +10,48 @@
     * { font-family: 'Inter', sans-serif; }
     .fade-in { animation: fadeIn 0.4s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
     .input-field {
-      @apply w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-800
-             focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-             transition placeholder-gray-400;
+      width: 100%;
+      padding: 10px 16px;
+      background: #1e2433;
+      border: 1px solid #2e3650;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 0.875rem;
+      transition: all 0.15s;
+      outline: none;
     }
-    .input-error { border-color: #ef4444 !important; }
-    .label { @apply block text-sm font-medium text-gray-700 mb-1.5; }
+    .input-field::placeholder { color: #4a5568; }
+    .input-field:focus { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,0.15); }
+    .input-field.input-error { border-color: #ef4444; }
+    select.input-field option { background: #1e2433; color: #e2e8f0; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #151a28; }
+    ::-webkit-scrollbar-thumb { background: #2e3650; border-radius: 4px; }
   </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50">
+<body class="min-h-screen" style="background: #0f1320;">
 
   <!-- Top Nav -->
-  <header class="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-10">
+  <header style="background: #151a28; border-bottom: 1px solid #1e2433;" class="sticky top-0 z-10">
     <div class="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
-      <!-- Logo -->
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#f97316;">
           <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
           </svg>
         </div>
         <div>
-          <span class="font-bold text-gray-900 text-sm">TechCorp</span>
-          <span class="text-gray-400 text-sm"> / ProjectFlow Pro</span>
+          <span class="font-bold text-white text-sm">TechCorp</span>
+          <span class="text-slate-500 text-sm"> / ProjectFlow Pro</span>
         </div>
       </div>
-      <!-- Badge -->
-      <div class="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
-        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block"></span>
+      <div class="flex items-center gap-2 text-xs px-3 py-1 rounded-full"
+        style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #34d399;">
+        <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full inline-block animate-pulse"></span>
         AI Support Active — Avg. response &lt; 5 min
       </div>
     </div>
@@ -49,24 +61,26 @@
 
     <!-- Page Title -->
     <div class="mb-8 text-center">
-      <h1 class="text-3xl font-bold text-gray-900">How can we help?</h1>
-      <p class="text-gray-500 mt-2 text-sm">Our AI assistant handles most requests instantly, 24/7.</p>
+      <h1 class="text-3xl font-bold text-white">How can we help?</h1>
+      <p class="mt-2 text-sm" style="color: #64748b;">Our AI assistant handles most requests instantly, 24/7.</p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
       <!-- LEFT: Form / Success -->
       <div class="lg:col-span-2">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="rounded-2xl overflow-hidden" style="background: #151a28; border: 1px solid #1e2433;">
 
           <!-- Tabs -->
-          <div class="flex border-b border-gray-100">
+          <div class="flex" style="border-bottom: 1px solid #1e2433;">
             <button onclick="showTab('form')" id="tab-form"
-              class="flex-1 py-3.5 text-sm font-medium text-indigo-600 border-b-2 border-indigo-600 transition">
+              class="flex-1 py-3.5 text-sm font-medium transition"
+              style="color: #f97316; border-bottom: 2px solid #f97316;">
               Submit a Request
             </button>
             <button onclick="showTab('track')" id="tab-track"
-              class="flex-1 py-3.5 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition">
+              class="flex-1 py-3.5 text-sm font-medium transition"
+              style="color: #4a5568; border-bottom: 2px solid transparent;">
               Track Ticket
             </button>
           </div>
@@ -76,27 +90,31 @@
 
             <!-- Success State -->
             <div id="success-view" class="hidden flex-col items-center text-center py-8 fade-in">
-              <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-5">
-                <svg class="h-10 w-10 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div class="w-20 h-20 rounded-full flex items-center justify-center mb-5"
+                style="background: rgba(16,185,129,0.15);">
+                <svg class="h-10 w-10 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 class="text-2xl font-bold text-gray-900 mb-2">Request Received!</h2>
-              <p class="text-gray-500 text-sm mb-6 max-w-sm">
+              <h2 class="text-2xl font-bold text-white mb-2">Request Received!</h2>
+              <p class="text-sm mb-6 max-w-sm" style="color: #64748b;">
                 Our AI assistant is reviewing your request. You'll receive a reply at your email address shortly.
               </p>
-              <div class="bg-indigo-50 border border-indigo-100 rounded-xl px-8 py-5 mb-6 w-full max-w-sm">
-                <p class="text-xs text-gray-500 mb-1">Your Ticket Reference</p>
-                <p id="ticket-id-display" class="font-mono text-lg font-bold text-indigo-700 break-all"></p>
-                <p class="text-xs text-gray-400 mt-2">Expected reply: within 5 minutes</p>
+              <div class="rounded-xl px-8 py-5 mb-6 w-full max-w-sm"
+                style="background: rgba(249,115,22,0.1); border: 1px solid rgba(249,115,22,0.2);">
+                <p class="text-xs mb-1" style="color: #64748b;">Your Ticket Reference</p>
+                <p id="ticket-id-display" class="font-mono text-lg font-bold break-all" style="color: #fb923c;"></p>
+                <p class="text-xs mt-2" style="color: #475569;">Expected reply: within 5 minutes</p>
               </div>
               <div class="flex gap-3">
                 <button onclick="resetForm()"
-                  class="px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
+                  class="px-5 py-2 text-white text-sm font-medium rounded-lg transition" style="background:#f97316;" onmouseover="this.style.background='#ea580c'" onmouseout="this.style.background='#f97316'">
                   New Request
                 </button>
                 <button onclick="trackTicket(document.getElementById('ticket-id-display').textContent)"
-                  class="px-5 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
+                  class="px-5 py-2 text-sm font-medium rounded-lg transition"
+                  style="border: 1px solid #2e3650; color: #94a3b8; background: transparent;"
+                  onmouseover="this.style.background='#1e2433'" onmouseout="this.style.background='transparent'">
                   Track This Ticket
                 </button>
               </div>
@@ -106,7 +124,8 @@
             <form id="support-form" onsubmit="handleSubmit(event)" novalidate class="fade-in">
 
               <!-- Error Banner -->
-              <div id="error-banner" class="hidden mb-5 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex gap-2 items-start">
+              <div id="error-banner" class="hidden mb-5 p-4 rounded-lg text-sm flex gap-2 items-start"
+                style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5;">
                 <svg class="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -116,33 +135,39 @@
               <!-- Name + Email -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label class="label">Full Name <span class="text-red-400">*</span></label>
+                  <label class="block text-sm font-medium mb-1.5" style="color: #94a3b8;">
+                    Full Name <span style="color: #f87171;">*</span>
+                  </label>
                   <input type="text" id="name" name="name" placeholder="Jane Smith"
                     class="input-field" autocomplete="name" />
-                  <p id="name-error" class="mt-1 text-xs text-red-500 hidden"></p>
+                  <p id="name-error" class="mt-1 text-xs hidden" style="color: #f87171;"></p>
                 </div>
                 <div>
-                  <label class="label">Email Address <span class="text-red-400">*</span></label>
+                  <label class="block text-sm font-medium mb-1.5" style="color: #94a3b8;">
+                    Email Address <span style="color: #f87171;">*</span>
+                  </label>
                   <input type="email" id="email" name="email" placeholder="jane@company.com"
                     class="input-field" autocomplete="email" />
-                  <p id="email-error" class="mt-1 text-xs text-red-500 hidden"></p>
+                  <p id="email-error" class="mt-1 text-xs hidden" style="color: #f87171;"></p>
                 </div>
               </div>
 
               <!-- Subject -->
               <div class="mb-4">
-                <label class="label">Subject <span class="text-red-400">*</span></label>
+                <label class="block text-sm font-medium mb-1.5" style="color: #94a3b8;">
+                  Subject <span style="color: #f87171;">*</span>
+                </label>
                 <input type="text" id="subject" name="subject"
                   placeholder="e.g. Notifications not working after last update"
                   class="input-field" />
-                <p id="subject-error" class="mt-1 text-xs text-red-500 hidden"></p>
+                <p id="subject-error" class="mt-1 text-xs hidden" style="color: #f87171;"></p>
               </div>
 
               <!-- Category + Priority -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label class="label">Category <span class="text-red-400">*</span></label>
-                  <select id="category" name="category" class="input-field bg-white">
+                  <label class="block text-sm font-medium mb-1.5" style="color: #94a3b8;">Category</label>
+                  <select id="category" name="category" class="input-field">
                     <option value="general">💬 General Question</option>
                     <option value="technical">🔧 Technical Support</option>
                     <option value="billing">💳 Billing Inquiry</option>
@@ -151,8 +176,8 @@
                   </select>
                 </div>
                 <div>
-                  <label class="label">Priority</label>
-                  <select id="priority" name="priority" class="input-field bg-white">
+                  <label class="block text-sm font-medium mb-1.5" style="color: #94a3b8;">Priority</label>
+                  <select id="priority" name="priority" class="input-field">
                     <option value="low">🟢 Low — Not urgent</option>
                     <option value="medium" selected>🟡 Medium — Need help soon</option>
                     <option value="high">🔴 High — Blocking my work</option>
@@ -162,22 +187,26 @@
 
               <!-- Message -->
               <div class="mb-6">
-                <label class="label">Message <span class="text-red-400">*</span></label>
+                <label class="block text-sm font-medium mb-1.5" style="color: #94a3b8;">
+                  Message <span style="color: #f87171;">*</span>
+                </label>
                 <textarea id="message" name="message" rows="5"
-                  placeholder="Please describe your issue in detail. Include steps to reproduce, screenshots descriptions, and any error messages you see..."
+                  placeholder="Please describe your issue in detail. Include steps to reproduce, error messages you see..."
                   oninput="document.getElementById('char-count').textContent = this.value.length"
-                  class="input-field resize-none"></textarea>
+                  class="input-field" style="resize: none;"></textarea>
                 <div class="flex justify-between mt-1.5">
-                  <p id="message-error" class="text-xs text-red-500 hidden"></p>
-                  <p class="text-xs text-gray-400 ml-auto"><span id="char-count">0</span> / 5000</p>
+                  <p id="message-error" class="text-xs hidden" style="color: #f87171;"></p>
+                  <p class="text-xs ml-auto" style="color: #475569;">
+                    <span id="char-count">0</span> / 5000
+                  </p>
                 </div>
               </div>
 
               <!-- Submit -->
               <button type="submit" id="submit-btn"
-                class="w-full py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 active:bg-indigo-800
-                       transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
-                       flex items-center justify-center gap-2 text-sm">
+                class="w-full py-3 text-white font-semibold rounded-lg transition focus:outline-none flex items-center justify-center gap-2 text-sm"
+                style="background:#f97316; box-shadow: 0 0 20px rgba(249,115,22,0.3);"
+                onmouseover="this.style.background='#ea580c'" onmouseout="this.style.background='#f97316'">
                 <span id="btn-text">Submit Request</span>
                 <svg id="spinner" class="hidden animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -190,23 +219,25 @@
 
           <!-- ── TRACK TICKET ── -->
           <div id="view-track" class="hidden p-8 fade-in">
-            <p class="text-sm text-gray-500 mb-4">Enter your ticket ID to check its status.</p>
+            <p class="text-sm mb-4" style="color: #64748b;">Enter your ticket ID to check its status.</p>
             <div class="flex gap-3 mb-6">
-              <input type="text" id="track-input" placeholder="e.g. 27184ce8-034b-42f3-bd9a-6b5cd811e7fb"
+              <input type="text" id="track-input"
+                placeholder="e.g. 27184ce8-034b-42f3-bd9a-6b5cd811e7fb"
                 class="input-field flex-1 font-mono text-xs" />
               <button onclick="fetchTicket()"
-                class="px-5 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition whitespace-nowrap">
+                class="px-5 py-2.5 text-white text-sm font-medium rounded-lg transition whitespace-nowrap"
+                style="background:#f97316;" onmouseover="this.style.background='#ea580c'" onmouseout="this.style.background='#f97316'">
                 Check Status
               </button>
             </div>
 
             <!-- Ticket Result -->
             <div id="ticket-result" class="hidden fade-in">
-              <div class="border border-gray-100 rounded-xl overflow-hidden">
-                <div class="bg-gray-50 px-4 py-3 flex items-center justify-between">
+              <div class="rounded-xl overflow-hidden" style="border: 1px solid #2e3650;">
+                <div class="px-4 py-3 flex items-center justify-between" style="background: #1e2433;">
                   <div>
-                    <p class="text-xs text-gray-400">Ticket ID</p>
-                    <p id="tr-id" class="font-mono text-xs font-semibold text-gray-700"></p>
+                    <p class="text-xs" style="color: #475569;">Ticket ID</p>
+                    <p id="tr-id" class="font-mono text-xs font-semibold" style="color: #94a3b8;"></p>
                   </div>
                   <span id="tr-status" class="text-xs font-semibold px-3 py-1 rounded-full"></span>
                 </div>
@@ -214,77 +245,77 @@
               </div>
             </div>
 
-            <div id="track-error" class="hidden mt-3 text-sm text-red-500"></div>
+            <div id="track-error" class="hidden mt-3 text-sm" style="color: #f87171;"></div>
           </div>
 
         </div>
       </div>
 
-      <!-- RIGHT: Info Sidebar -->
+      <!-- RIGHT: Sidebar -->
       <div class="space-y-5">
 
         <!-- Response SLA -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h3 class="font-semibold text-gray-800 text-sm mb-4">Expected Response Times</h3>
+        <div class="rounded-2xl p-6" style="background: #151a28; border: 1px solid #1e2433;">
+          <h3 class="font-semibold text-sm mb-4 text-white">Expected Response Times</h3>
           <div class="space-y-3">
             <div class="flex items-center justify-between">
-              <span class="text-xs text-gray-500 flex items-center gap-1.5">
+              <span class="text-xs flex items-center gap-1.5" style="color: #64748b;">
                 <span class="w-2 h-2 bg-red-500 rounded-full inline-block"></span> High
               </span>
-              <span class="text-xs font-semibold text-gray-700">&lt; 2 min</span>
+              <span class="text-xs font-semibold" style="color: #e2e8f0;">&lt; 2 min</span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-xs text-gray-500 flex items-center gap-1.5">
+              <span class="text-xs flex items-center gap-1.5" style="color: #64748b;">
                 <span class="w-2 h-2 bg-yellow-500 rounded-full inline-block"></span> Medium
               </span>
-              <span class="text-xs font-semibold text-gray-700">&lt; 5 min</span>
+              <span class="text-xs font-semibold" style="color: #e2e8f0;">&lt; 5 min</span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-xs text-gray-500 flex items-center gap-1.5">
+              <span class="text-xs flex items-center gap-1.5" style="color: #64748b;">
                 <span class="w-2 h-2 bg-green-500 rounded-full inline-block"></span> Low
               </span>
-              <span class="text-xs font-semibold text-gray-700">&lt; 30 min</span>
+              <span class="text-xs font-semibold" style="color: #e2e8f0;">&lt; 30 min</span>
             </div>
           </div>
         </div>
 
         <!-- What we handle -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h3 class="font-semibold text-gray-800 text-sm mb-4">What AI Support Handles</h3>
+        <div class="rounded-2xl p-6" style="background: #151a28; border: 1px solid #1e2433;">
+          <h3 class="font-semibold text-sm mb-4 text-white">What AI Support Handles</h3>
           <ul class="space-y-2">
-            <li class="flex items-start gap-2 text-xs text-gray-600">
-              <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <li class="flex items-start gap-2 text-xs" style="color: #94a3b8;">
+              <svg class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
               Product feature questions
             </li>
-            <li class="flex items-start gap-2 text-xs text-gray-600">
-              <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <li class="flex items-start gap-2 text-xs" style="color: #94a3b8;">
+              <svg class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
               How-to guidance &amp; troubleshooting
             </li>
-            <li class="flex items-start gap-2 text-xs text-gray-600">
-              <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <li class="flex items-start gap-2 text-xs" style="color: #94a3b8;">
+              <svg class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
               Bug report intake &amp; triage
             </li>
-            <li class="flex items-start gap-2 text-xs text-gray-600">
-              <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <li class="flex items-start gap-2 text-xs" style="color: #94a3b8;">
+              <svg class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
               Feedback &amp; feature requests
             </li>
           </ul>
-          <div class="mt-4 pt-4 border-t border-gray-100">
-            <p class="text-xs text-gray-400 mb-2 font-medium">Escalated to human agent:</p>
+          <div class="mt-4 pt-4" style="border-top: 1px solid #1e2433;">
+            <p class="text-xs mb-2 font-medium" style="color: #475569;">Escalated to human agent:</p>
             <ul class="space-y-1.5">
-              <li class="flex items-start gap-2 text-xs text-gray-500">
+              <li class="flex items-start gap-2 text-xs" style="color: #64748b;">
                 <svg class="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Pricing / quote requests
               </li>
-              <li class="flex items-start gap-2 text-xs text-gray-500">
+              <li class="flex items-start gap-2 text-xs" style="color: #64748b;">
                 <svg class="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Refund / billing disputes
               </li>
-              <li class="flex items-start gap-2 text-xs text-gray-500">
+              <li class="flex items-start gap-2 text-xs" style="color: #64748b;">
                 <svg class="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Legal / compliance matters
               </li>
-              <li class="flex items-start gap-2 text-xs text-gray-500">
+              <li class="flex items-start gap-2 text-xs" style="color: #64748b;">
                 <svg class="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Subscription cancellations
               </li>
@@ -293,30 +324,32 @@
         </div>
 
         <!-- Other Channels -->
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h3 class="font-semibold text-gray-800 text-sm mb-4">Other Support Channels</h3>
+        <div class="rounded-2xl p-6" style="background: #151a28; border: 1px solid #1e2433;">
+          <h3 class="font-semibold text-sm mb-4 text-white">Other Support Channels</h3>
           <div class="space-y-3">
-            <div class="flex items-center gap-3 text-xs text-gray-600">
-              <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
-                <svg class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="flex items-center gap-3 text-xs" style="color: #94a3b8;">
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                style="background: rgba(249,115,22,0.15);">
+                <svg class="w-4 h-4" style="color: #fb923c;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                 </svg>
               </div>
               <div>
-                <p class="font-medium text-gray-700">Email</p>
-                <p class="text-gray-400">support@techcorp.io</p>
+                <p class="font-medium text-white">Email</p>
+                <p style="color: #475569;">support@techcorp.io</p>
               </div>
             </div>
-            <div class="flex items-center gap-3 text-xs text-gray-600">
-              <div class="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center shrink-0">
-                <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center gap-3 text-xs" style="color: #94a3b8;">
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                style="background: rgba(16,185,129,0.15);">
+                <svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                   <path d="M11.993 1.5C6.173 1.5 1.5 6.173 1.5 11.993c0 2.04.58 3.944 1.588 5.552L1.5 22.5l5.12-1.563A10.445 10.445 0 0011.993 22.5c5.82 0 10.507-4.68 10.507-10.507C22.5 6.173 17.813 1.5 11.993 1.5z"/>
                 </svg>
               </div>
               <div>
-                <p class="font-medium text-gray-700">WhatsApp</p>
-                <p class="text-gray-400">+1 (800) TECHCORP</p>
+                <p class="font-medium text-white">WhatsApp</p>
+                <p style="color: #475569;">+1 (800) TECHCORP</p>
               </div>
             </div>
           </div>
@@ -327,7 +360,7 @@
   </main>
 
   <!-- Footer -->
-  <footer class="text-center text-xs text-gray-400 py-8">
+  <footer class="text-center text-xs py-8" style="color: #334155;">
     &copy; 2026 TechCorp · ProjectFlow Pro · AI-powered support available 24/7
   </footer>
 
@@ -338,12 +371,11 @@
   function showTab(tab) {
     document.getElementById('view-form').classList.toggle('hidden', tab !== 'form');
     document.getElementById('view-track').classList.toggle('hidden', tab !== 'track');
-    document.getElementById('tab-form').className = tab === 'form'
-      ? 'flex-1 py-3.5 text-sm font-medium text-indigo-600 border-b-2 border-indigo-600 transition'
-      : 'flex-1 py-3.5 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition';
-    document.getElementById('tab-track').className = tab === 'track'
-      ? 'flex-1 py-3.5 text-sm font-medium text-indigo-600 border-b-2 border-indigo-600 transition'
-      : 'flex-1 py-3.5 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition';
+
+    const activeStyle  = 'color: #f97316; border-bottom: 2px solid #f97316;';
+    const inactiveStyle = 'color: #4a5568; border-bottom: 2px solid transparent;';
+    document.getElementById('tab-form').style.cssText  = tab === 'form'  ? activeStyle : inactiveStyle;
+    document.getElementById('tab-track').style.cssText = tab === 'track' ? activeStyle : inactiveStyle;
   }
 
   // ── Validation helpers ─────────────────────────────────────
@@ -369,8 +401,8 @@
     const subject = document.getElementById('subject').value.trim();
     const message = document.getElementById('message').value.trim();
 
-    if (name.length < 2)   { showFieldError('name', 'Please enter your full name (min 2 characters).'); valid = false; }
-    if (name.length > 255) { showFieldError('name', 'Name must be under 255 characters.'); valid = false; }
+    if (name.length < 2)    { showFieldError('name', 'Please enter your full name (min 2 characters).'); valid = false; }
+    if (name.length > 255)  { showFieldError('name', 'Name must be under 255 characters.'); valid = false; }
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       showFieldError('email', 'Please enter a valid email address.'); valid = false;
     }
@@ -413,11 +445,8 @@
         const err = await res.json();
         const detail = err.detail;
         let msg = 'Submission failed. Please try again.';
-        if (Array.isArray(detail)) {
-          msg = detail.map(d => d.msg).join(', ');
-        } else if (typeof detail === 'string') {
-          msg = detail;
-        }
+        if (Array.isArray(detail)) msg = detail.map(d => d.msg).join(', ');
+        else if (typeof detail === 'string') msg = detail;
         throw new Error(msg);
       }
 
@@ -457,7 +486,7 @@
 
   async function fetchTicket() {
     const id = document.getElementById('track-input').value.trim();
-    const result = document.getElementById('ticket-result');
+    const result   = document.getElementById('ticket-result');
     const trackErr = document.getElementById('track-error');
     result.classList.add('hidden');
     trackErr.classList.add('hidden');
@@ -472,20 +501,26 @@
       document.getElementById('tr-id').textContent = data.ticket_id;
 
       const statusEl = document.getElementById('tr-status');
-      const statusColors = { open: 'bg-blue-100 text-blue-700', closed: 'bg-gray-100 text-gray-600', escalated: 'bg-orange-100 text-orange-700' };
-      statusEl.className = `text-xs font-semibold px-3 py-1 rounded-full ${statusColors[data.status] || 'bg-gray-100 text-gray-600'}`;
+      const statusStyles = {
+        open:      'background: rgba(249,115,22,0.15); color: #fb923c;',
+        closed:    'background: rgba(100,116,139,0.15); color: #94a3b8;',
+        escalated: 'background: rgba(251,146,60,0.15); color: #fb923c;',
+      };
+      statusEl.style.cssText = statusStyles[data.status] || statusStyles.closed;
       statusEl.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
 
       const msgContainer = document.getElementById('tr-messages');
       msgContainer.innerHTML = data.messages.map(m => `
         <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold
-            ${m.role === 'agent' ? 'bg-indigo-100 text-indigo-600' : m.role === 'system' ? 'bg-gray-100 text-gray-500' : 'bg-emerald-100 text-emerald-600'}">
+          <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
+            style="${m.role === 'agent'  ? 'background:rgba(249,115,22,0.2);color:#fb923c;'
+                  : m.role === 'system' ? 'background:rgba(100,116,139,0.2);color:#64748b;'
+                                        : 'background:rgba(16,185,129,0.2);color:#34d399;'}">
             ${m.role === 'agent' ? 'AI' : m.role === 'system' ? '⚙' : 'You'}
           </div>
           <div class="flex-1">
-            <p class="text-xs text-gray-800">${m.content}</p>
-            <p class="text-xs text-gray-400 mt-1">${new Date(m.timestamp).toLocaleString()}</p>
+            <p class="text-xs" style="color:#cbd5e1;">${m.content}</p>
+            <p class="text-xs mt-1" style="color:#475569;">${new Date(m.timestamp).toLocaleString()}</p>
           </div>
         </div>
       `).join('');
@@ -497,7 +532,6 @@
     }
   }
 
-  // Allow Enter key in track input
   document.getElementById('track-input')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') fetchTicket();
   });
