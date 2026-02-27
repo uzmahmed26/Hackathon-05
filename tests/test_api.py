@@ -106,8 +106,8 @@ class TestWebhookEndpoints:
             json=sample_whatsapp_message
         )
 
-        # Should return 200 for successful processing or 404 if endpoint doesn't exist
-        assert response.status_code in [200, 400, 404, 405, 500]
+        # 403 is expected when no Twilio signature header is present
+        assert response.status_code in [200, 400, 403, 404, 405, 500]
 
     @pytest.mark.asyncio
     async def test_webhook_validation(self, api_client):
