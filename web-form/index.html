@@ -3,217 +3,505 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Customer Support</title>
+  <title>TechCorp Support — ProjectFlow Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    * { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .input-field {
+      @apply w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-800
+             focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+             transition placeholder-gray-400;
+    }
+    .input-error { border-color: #ef4444 !important; }
+    .label { @apply block text-sm font-medium text-gray-700 mb-1.5; }
+  </style>
 </head>
-<body class="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+<body class="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50">
 
-  <div class="w-full max-w-2xl">
-
-    <!-- Header -->
-    <div class="text-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-800">Customer Support</h1>
-      <p class="text-gray-500 mt-1">We'll get back to you within 5 minutes</p>
-    </div>
-
-    <!-- Card -->
-    <div class="bg-white rounded-2xl shadow-lg p-8">
-
-      <!-- Success State -->
-      <div id="success-view" class="hidden flex-col items-center text-center py-6">
-        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-          <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+  <!-- Top Nav -->
+  <header class="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-10">
+    <div class="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+      <!-- Logo -->
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
           </svg>
         </div>
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">Request Submitted!</h2>
-        <p class="text-gray-500 mb-4">Our AI assistant will respond to your email shortly.</p>
-        <div class="bg-green-50 border border-green-200 rounded-lg px-6 py-4 mb-6">
-          <p class="text-sm text-gray-500 mb-1">Your Ticket ID</p>
-          <p id="ticket-id" class="font-mono text-lg font-bold text-green-700"></p>
+        <div>
+          <span class="font-bold text-gray-900 text-sm">TechCorp</span>
+          <span class="text-gray-400 text-sm"> / ProjectFlow Pro</span>
         </div>
-        <button onclick="resetForm()"
-          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-          Submit Another Request
-        </button>
+      </div>
+      <!-- Badge -->
+      <div class="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
+        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block"></span>
+        AI Support Active — Avg. response &lt; 5 min
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-6 py-10">
+
+    <!-- Page Title -->
+    <div class="mb-8 text-center">
+      <h1 class="text-3xl font-bold text-gray-900">How can we help?</h1>
+      <p class="text-gray-500 mt-2 text-sm">Our AI assistant handles most requests instantly, 24/7.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <!-- LEFT: Form / Success -->
+      <div class="lg:col-span-2">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+
+          <!-- Tabs -->
+          <div class="flex border-b border-gray-100">
+            <button onclick="showTab('form')" id="tab-form"
+              class="flex-1 py-3.5 text-sm font-medium text-indigo-600 border-b-2 border-indigo-600 transition">
+              Submit a Request
+            </button>
+            <button onclick="showTab('track')" id="tab-track"
+              class="flex-1 py-3.5 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition">
+              Track Ticket
+            </button>
+          </div>
+
+          <!-- ── SUBMIT FORM ── -->
+          <div id="view-form" class="p-8 fade-in">
+
+            <!-- Success State -->
+            <div id="success-view" class="hidden flex-col items-center text-center py-8 fade-in">
+              <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-5">
+                <svg class="h-10 w-10 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 class="text-2xl font-bold text-gray-900 mb-2">Request Received!</h2>
+              <p class="text-gray-500 text-sm mb-6 max-w-sm">
+                Our AI assistant is reviewing your request. You'll receive a reply at your email address shortly.
+              </p>
+              <div class="bg-indigo-50 border border-indigo-100 rounded-xl px-8 py-5 mb-6 w-full max-w-sm">
+                <p class="text-xs text-gray-500 mb-1">Your Ticket Reference</p>
+                <p id="ticket-id-display" class="font-mono text-lg font-bold text-indigo-700 break-all"></p>
+                <p class="text-xs text-gray-400 mt-2">Expected reply: within 5 minutes</p>
+              </div>
+              <div class="flex gap-3">
+                <button onclick="resetForm()"
+                  class="px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
+                  New Request
+                </button>
+                <button onclick="trackTicket(document.getElementById('ticket-id-display').textContent)"
+                  class="px-5 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
+                  Track This Ticket
+                </button>
+              </div>
+            </div>
+
+            <!-- Form -->
+            <form id="support-form" onsubmit="handleSubmit(event)" novalidate class="fade-in">
+
+              <!-- Error Banner -->
+              <div id="error-banner" class="hidden mb-5 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex gap-2 items-start">
+                <svg class="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span id="error-text"></span>
+              </div>
+
+              <!-- Name + Email -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class="label">Full Name <span class="text-red-400">*</span></label>
+                  <input type="text" id="name" name="name" placeholder="Jane Smith"
+                    class="input-field" autocomplete="name" />
+                  <p id="name-error" class="mt-1 text-xs text-red-500 hidden"></p>
+                </div>
+                <div>
+                  <label class="label">Email Address <span class="text-red-400">*</span></label>
+                  <input type="email" id="email" name="email" placeholder="jane@company.com"
+                    class="input-field" autocomplete="email" />
+                  <p id="email-error" class="mt-1 text-xs text-red-500 hidden"></p>
+                </div>
+              </div>
+
+              <!-- Subject -->
+              <div class="mb-4">
+                <label class="label">Subject <span class="text-red-400">*</span></label>
+                <input type="text" id="subject" name="subject"
+                  placeholder="e.g. Notifications not working after last update"
+                  class="input-field" />
+                <p id="subject-error" class="mt-1 text-xs text-red-500 hidden"></p>
+              </div>
+
+              <!-- Category + Priority -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class="label">Category <span class="text-red-400">*</span></label>
+                  <select id="category" name="category" class="input-field bg-white">
+                    <option value="general">💬 General Question</option>
+                    <option value="technical">🔧 Technical Support</option>
+                    <option value="billing">💳 Billing Inquiry</option>
+                    <option value="bug_report">🐛 Bug Report</option>
+                    <option value="feedback">💡 Feedback / Feature Request</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="label">Priority</label>
+                  <select id="priority" name="priority" class="input-field bg-white">
+                    <option value="low">🟢 Low — Not urgent</option>
+                    <option value="medium" selected>🟡 Medium — Need help soon</option>
+                    <option value="high">🔴 High — Blocking my work</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Message -->
+              <div class="mb-6">
+                <label class="label">Message <span class="text-red-400">*</span></label>
+                <textarea id="message" name="message" rows="5"
+                  placeholder="Please describe your issue in detail. Include steps to reproduce, screenshots descriptions, and any error messages you see..."
+                  oninput="document.getElementById('char-count').textContent = this.value.length"
+                  class="input-field resize-none"></textarea>
+                <div class="flex justify-between mt-1.5">
+                  <p id="message-error" class="text-xs text-red-500 hidden"></p>
+                  <p class="text-xs text-gray-400 ml-auto"><span id="char-count">0</span> / 5000</p>
+                </div>
+              </div>
+
+              <!-- Submit -->
+              <button type="submit" id="submit-btn"
+                class="w-full py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 active:bg-indigo-800
+                       transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
+                       flex items-center justify-center gap-2 text-sm">
+                <span id="btn-text">Submit Request</span>
+                <svg id="spinner" class="hidden animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </button>
+
+            </form>
+          </div>
+
+          <!-- ── TRACK TICKET ── -->
+          <div id="view-track" class="hidden p-8 fade-in">
+            <p class="text-sm text-gray-500 mb-4">Enter your ticket ID to check its status.</p>
+            <div class="flex gap-3 mb-6">
+              <input type="text" id="track-input" placeholder="e.g. 27184ce8-034b-42f3-bd9a-6b5cd811e7fb"
+                class="input-field flex-1 font-mono text-xs" />
+              <button onclick="fetchTicket()"
+                class="px-5 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition whitespace-nowrap">
+                Check Status
+              </button>
+            </div>
+
+            <!-- Ticket Result -->
+            <div id="ticket-result" class="hidden fade-in">
+              <div class="border border-gray-100 rounded-xl overflow-hidden">
+                <div class="bg-gray-50 px-4 py-3 flex items-center justify-between">
+                  <div>
+                    <p class="text-xs text-gray-400">Ticket ID</p>
+                    <p id="tr-id" class="font-mono text-xs font-semibold text-gray-700"></p>
+                  </div>
+                  <span id="tr-status" class="text-xs font-semibold px-3 py-1 rounded-full"></span>
+                </div>
+                <div id="tr-messages" class="p-4 space-y-3 max-h-64 overflow-y-auto"></div>
+              </div>
+            </div>
+
+            <div id="track-error" class="hidden mt-3 text-sm text-red-500"></div>
+          </div>
+
+        </div>
       </div>
 
-      <!-- Form -->
-      <form id="support-form" onsubmit="handleSubmit(event)" novalidate>
+      <!-- RIGHT: Info Sidebar -->
+      <div class="space-y-5">
 
-        <!-- Error Banner -->
-        <div id="error-banner" class="hidden mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"></div>
-
-        <!-- Name + Email -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Name <span class="text-red-500">*</span></label>
-            <input type="text" id="name" name="name" placeholder="Jane Smith"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-            <p id="name-error" class="mt-1 text-xs text-red-600 hidden"></p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
-            <input type="email" id="email" name="email" placeholder="jane@example.com"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-            <p id="email-error" class="mt-1 text-xs text-red-600 hidden"></p>
-          </div>
-        </div>
-
-        <!-- Subject -->
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Subject <span class="text-red-500">*</span></label>
-          <input type="text" id="subject" name="subject" placeholder="Brief description of your issue"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-          <p id="subject-error" class="mt-1 text-xs text-red-600 hidden"></p>
-        </div>
-
-        <!-- Category + Priority -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-            <select id="category" name="category"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
-              <option value="general">General Question</option>
-              <option value="technical">Technical Support</option>
-              <option value="billing">Billing Inquiry</option>
-              <option value="bug_report">Bug Report</option>
-              <option value="feedback">Feedback</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-            <select id="priority" name="priority"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
-              <option value="low">Low — Not urgent</option>
-              <option value="medium" selected>Medium — Need help soon</option>
-              <option value="high">High — Urgent issue</option>
-            </select>
+        <!-- Response SLA -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 class="font-semibold text-gray-800 text-sm mb-4">Expected Response Times</h3>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-gray-500 flex items-center gap-1.5">
+                <span class="w-2 h-2 bg-red-500 rounded-full inline-block"></span> High
+              </span>
+              <span class="text-xs font-semibold text-gray-700">&lt; 2 min</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-gray-500 flex items-center gap-1.5">
+                <span class="w-2 h-2 bg-yellow-500 rounded-full inline-block"></span> Medium
+              </span>
+              <span class="text-xs font-semibold text-gray-700">&lt; 5 min</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-gray-500 flex items-center gap-1.5">
+                <span class="w-2 h-2 bg-green-500 rounded-full inline-block"></span> Low
+              </span>
+              <span class="text-xs font-semibold text-gray-700">&lt; 30 min</span>
+            </div>
           </div>
         </div>
 
-        <!-- Message -->
-        <div class="mb-6">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Message <span class="text-red-500">*</span></label>
-          <textarea id="message" name="message" rows="5"
-            placeholder="Please describe your issue in detail..."
-            oninput="document.getElementById('char-count').textContent = this.value.length"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"></textarea>
-          <div class="flex justify-between mt-1">
-            <p id="message-error" class="text-xs text-red-600 hidden"></p>
-            <p class="text-xs text-gray-400 ml-auto"><span id="char-count">0</span>/5000</p>
+        <!-- What we handle -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 class="font-semibold text-gray-800 text-sm mb-4">What AI Support Handles</h3>
+          <ul class="space-y-2">
+            <li class="flex items-start gap-2 text-xs text-gray-600">
+              <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Product feature questions
+            </li>
+            <li class="flex items-start gap-2 text-xs text-gray-600">
+              <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              How-to guidance &amp; troubleshooting
+            </li>
+            <li class="flex items-start gap-2 text-xs text-gray-600">
+              <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Bug report intake &amp; triage
+            </li>
+            <li class="flex items-start gap-2 text-xs text-gray-600">
+              <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Feedback &amp; feature requests
+            </li>
+          </ul>
+          <div class="mt-4 pt-4 border-t border-gray-100">
+            <p class="text-xs text-gray-400 mb-2 font-medium">Escalated to human agent:</p>
+            <ul class="space-y-1.5">
+              <li class="flex items-start gap-2 text-xs text-gray-500">
+                <svg class="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Pricing / quote requests
+              </li>
+              <li class="flex items-start gap-2 text-xs text-gray-500">
+                <svg class="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Refund / billing disputes
+              </li>
+              <li class="flex items-start gap-2 text-xs text-gray-500">
+                <svg class="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Legal / compliance matters
+              </li>
+              <li class="flex items-start gap-2 text-xs text-gray-500">
+                <svg class="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Subscription cancellations
+              </li>
+            </ul>
           </div>
         </div>
 
-        <!-- Submit -->
-        <button type="submit" id="submit-btn"
-          class="w-full py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center gap-2">
-          <span id="btn-text">Submit Request</span>
-          <svg id="spinner" class="hidden animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-        </button>
+        <!-- Other Channels -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 class="font-semibold text-gray-800 text-sm mb-4">Other Support Channels</h3>
+          <div class="space-y-3">
+            <div class="flex items-center gap-3 text-xs text-gray-600">
+              <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="font-medium text-gray-700">Email</p>
+                <p class="text-gray-400">support@techcorp.io</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-gray-600">
+              <div class="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                  <path d="M11.993 1.5C6.173 1.5 1.5 6.173 1.5 11.993c0 2.04.58 3.944 1.588 5.552L1.5 22.5l5.12-1.563A10.445 10.445 0 0011.993 22.5c5.82 0 10.507-4.68 10.507-10.507C22.5 6.173 17.813 1.5 11.993 1.5z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="font-medium text-gray-700">WhatsApp</p>
+                <p class="text-gray-400">+1 (800) TECHCORP</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      </form>
+      </div>
     </div>
-  </div>
+  </main>
 
-  <script>
-    const API_URL = 'http://localhost:8000/api/support/submit';
+  <!-- Footer -->
+  <footer class="text-center text-xs text-gray-400 py-8">
+    &copy; 2026 TechCorp · ProjectFlow Pro · AI-powered support available 24/7
+  </footer>
 
-    function showError(fieldId, msg) {
-      const el = document.getElementById(fieldId + '-error');
-      const input = document.getElementById(fieldId);
-      el.textContent = msg;
-      el.classList.remove('hidden');
-      input.classList.add('border-red-500');
-      input.classList.remove('border-gray-300');
+<script>
+  const API_BASE = 'http://localhost:8000';
+
+  // ── Tab switching ──────────────────────────────────────────
+  function showTab(tab) {
+    document.getElementById('view-form').classList.toggle('hidden', tab !== 'form');
+    document.getElementById('view-track').classList.toggle('hidden', tab !== 'track');
+    document.getElementById('tab-form').className = tab === 'form'
+      ? 'flex-1 py-3.5 text-sm font-medium text-indigo-600 border-b-2 border-indigo-600 transition'
+      : 'flex-1 py-3.5 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition';
+    document.getElementById('tab-track').className = tab === 'track'
+      ? 'flex-1 py-3.5 text-sm font-medium text-indigo-600 border-b-2 border-indigo-600 transition'
+      : 'flex-1 py-3.5 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition';
+  }
+
+  // ── Validation helpers ─────────────────────────────────────
+  function showFieldError(id, msg) {
+    const el = document.getElementById(id + '-error');
+    const input = document.getElementById(id);
+    if (el) { el.textContent = msg; el.classList.remove('hidden'); }
+    if (input) input.classList.add('input-error');
+  }
+  function clearFieldError(id) {
+    const el = document.getElementById(id + '-error');
+    const input = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+    if (input) input.classList.remove('input-error');
+  }
+
+  function validate() {
+    let valid = true;
+    ['name','email','subject','message'].forEach(clearFieldError);
+
+    const name    = document.getElementById('name').value.trim();
+    const email   = document.getElementById('email').value.trim();
+    const subject = document.getElementById('subject').value.trim();
+    const message = document.getElementById('message').value.trim();
+
+    if (name.length < 2)   { showFieldError('name', 'Please enter your full name (min 2 characters).'); valid = false; }
+    if (name.length > 255) { showFieldError('name', 'Name must be under 255 characters.'); valid = false; }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showFieldError('email', 'Please enter a valid email address.'); valid = false;
     }
+    if (subject.length < 5)   { showFieldError('subject', 'Subject must be at least 5 characters.'); valid = false; }
+    if (subject.length > 200) { showFieldError('subject', 'Subject must be under 200 characters.'); valid = false; }
+    if (message.length < 10)   { showFieldError('message', 'Please provide more detail (min 10 characters).'); valid = false; }
+    if (message.length > 5000) { showFieldError('message', 'Message must be under 5000 characters.'); valid = false; }
 
-    function clearError(fieldId) {
-      const el = document.getElementById(fieldId + '-error');
-      const input = document.getElementById(fieldId);
-      el.classList.add('hidden');
-      input.classList.remove('border-red-500');
-      input.classList.add('border-gray-300');
-    }
+    return valid;
+  }
 
-    function validate() {
-      let valid = true;
-      const name = document.getElementById('name').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const subject = document.getElementById('subject').value.trim();
-      const message = document.getElementById('message').value.trim();
+  // ── Form submission ────────────────────────────────────────
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!validate()) return;
 
-      clearError('name'); clearError('email'); clearError('subject'); clearError('message');
+    const banner = document.getElementById('error-banner');
+    banner.classList.add('hidden');
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('btn-text').textContent = 'Submitting...';
+    document.getElementById('spinner').classList.remove('hidden');
 
-      if (name.length < 2) { showError('name', 'Name must be at least 2 characters'); valid = false; }
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('email', 'Please enter a valid email address'); valid = false; }
-      if (subject.length < 5) { showError('subject', 'Subject must be at least 5 characters'); valid = false; }
-      if (message.length < 10) { showError('message', 'Message must be at least 10 characters'); valid = false; }
-      if (message.length > 5000) { showError('message', 'Message must be less than 5000 characters'); valid = false; }
+    const payload = {
+      name:     document.getElementById('name').value.trim(),
+      email:    document.getElementById('email').value.trim(),
+      subject:  document.getElementById('subject').value.trim(),
+      category: document.getElementById('category').value,
+      priority: document.getElementById('priority').value,
+      message:  document.getElementById('message').value.trim(),
+    };
 
-      return valid;
-    }
+    try {
+      const res = await fetch(`${API_BASE}/api/support/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-    async function handleSubmit(e) {
-      e.preventDefault();
-      if (!validate()) return;
-
-      const errorBanner = document.getElementById('error-banner');
-      errorBanner.classList.add('hidden');
-
-      // Loading state
-      document.getElementById('submit-btn').disabled = true;
-      document.getElementById('btn-text').textContent = 'Submitting...';
-      document.getElementById('spinner').classList.remove('hidden');
-
-      const payload = {
-        name: document.getElementById('name').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        subject: document.getElementById('subject').value.trim(),
-        category: document.getElementById('category').value,
-        priority: document.getElementById('priority').value,
-        message: document.getElementById('message').value.trim(),
-      };
-
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.detail || `Server error: ${res.status}`);
+      if (!res.ok) {
+        const err = await res.json();
+        const detail = err.detail;
+        let msg = 'Submission failed. Please try again.';
+        if (Array.isArray(detail)) {
+          msg = detail.map(d => d.msg).join(', ');
+        } else if (typeof detail === 'string') {
+          msg = detail;
         }
-
-        const data = await res.json();
-        document.getElementById('ticket-id').textContent = data.ticket_id;
-        document.getElementById('support-form').classList.add('hidden');
-        document.getElementById('success-view').classList.remove('hidden');
-        document.getElementById('success-view').classList.add('flex');
-
-      } catch (err) {
-        errorBanner.textContent = err.message || 'Something went wrong. Please try again.';
-        errorBanner.classList.remove('hidden');
-      } finally {
-        document.getElementById('submit-btn').disabled = false;
-        document.getElementById('btn-text').textContent = 'Submit Request';
-        document.getElementById('spinner').classList.add('hidden');
+        throw new Error(msg);
       }
-    }
 
-    function resetForm() {
-      document.getElementById('support-form').reset();
-      document.getElementById('char-count').textContent = '0';
-      document.getElementById('success-view').classList.add('hidden');
-      document.getElementById('success-view').classList.remove('flex');
-      document.getElementById('support-form').classList.remove('hidden');
-      ['name','email','subject','message'].forEach(clearError);
+      const data = await res.json();
+      document.getElementById('ticket-id-display').textContent = data.ticket_id;
+      document.getElementById('support-form').classList.add('hidden');
+      const sv = document.getElementById('success-view');
+      sv.classList.remove('hidden');
+      sv.classList.add('flex');
+
+    } catch (err) {
+      document.getElementById('error-text').textContent = err.message;
+      banner.classList.remove('hidden');
+    } finally {
+      document.getElementById('submit-btn').disabled = false;
+      document.getElementById('btn-text').textContent = 'Submit Request';
+      document.getElementById('spinner').classList.add('hidden');
     }
-  </script>
+  }
+
+  function resetForm() {
+    document.getElementById('support-form').reset();
+    document.getElementById('char-count').textContent = '0';
+    const sv = document.getElementById('success-view');
+    sv.classList.add('hidden'); sv.classList.remove('flex');
+    document.getElementById('support-form').classList.remove('hidden');
+    ['name','email','subject','message'].forEach(clearFieldError);
+    document.getElementById('error-banner').classList.add('hidden');
+  }
+
+  // ── Ticket tracking ────────────────────────────────────────
+  function trackTicket(id) {
+    showTab('track');
+    document.getElementById('track-input').value = id;
+    fetchTicket();
+  }
+
+  async function fetchTicket() {
+    const id = document.getElementById('track-input').value.trim();
+    const result = document.getElementById('ticket-result');
+    const trackErr = document.getElementById('track-error');
+    result.classList.add('hidden');
+    trackErr.classList.add('hidden');
+
+    if (!id) { trackErr.textContent = 'Please enter a ticket ID.'; trackErr.classList.remove('hidden'); return; }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/support/ticket/${id}`);
+      if (!res.ok) throw new Error('Ticket not found.');
+      const data = await res.json();
+
+      document.getElementById('tr-id').textContent = data.ticket_id;
+
+      const statusEl = document.getElementById('tr-status');
+      const statusColors = { open: 'bg-blue-100 text-blue-700', closed: 'bg-gray-100 text-gray-600', escalated: 'bg-orange-100 text-orange-700' };
+      statusEl.className = `text-xs font-semibold px-3 py-1 rounded-full ${statusColors[data.status] || 'bg-gray-100 text-gray-600'}`;
+      statusEl.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+
+      const msgContainer = document.getElementById('tr-messages');
+      msgContainer.innerHTML = data.messages.map(m => `
+        <div class="flex gap-3">
+          <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold
+            ${m.role === 'agent' ? 'bg-indigo-100 text-indigo-600' : m.role === 'system' ? 'bg-gray-100 text-gray-500' : 'bg-emerald-100 text-emerald-600'}">
+            ${m.role === 'agent' ? 'AI' : m.role === 'system' ? '⚙' : 'You'}
+          </div>
+          <div class="flex-1">
+            <p class="text-xs text-gray-800">${m.content}</p>
+            <p class="text-xs text-gray-400 mt-1">${new Date(m.timestamp).toLocaleString()}</p>
+          </div>
+        </div>
+      `).join('');
+
+      result.classList.remove('hidden');
+    } catch (err) {
+      trackErr.textContent = err.message;
+      trackErr.classList.remove('hidden');
+    }
+  }
+
+  // Allow Enter key in track input
+  document.getElementById('track-input')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') fetchTicket();
+  });
+</script>
+
 </body>
 </html>
