@@ -12,8 +12,8 @@ from datetime import datetime
 
 # Set test environment
 os.environ['TESTING'] = 'true'
-os.environ['DATABASE_URL'] = 'postgresql://fte_user:fte_password@localhost:5433/fte_db'
-os.environ['REDIS_URL'] = 'redis://localhost:6379/1'  # Use DB 1 for tests
+os.environ.setdefault('DATABASE_URL', 'postgresql://fte_user:fte_password@localhost:5433/fte_db')
+os.environ.setdefault('REDIS_URL', 'redis://localhost:6379/1')  # Use DB 1 for tests
 
 from api.main import app
 from database.queries import DatabaseManager
@@ -58,7 +58,7 @@ async def db_conn(db_manager):
 @pytest.fixture(scope="function")
 async def redis_producer():
     """Create Redis producer for tests"""
-    producer = RedisProducer()
+    producer = RedisProducer(redis_url=os.getenv('REDIS_URL', 'redis://localhost:6379'))
     await producer.connect()
     
     yield producer
