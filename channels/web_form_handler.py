@@ -180,10 +180,12 @@ async def process_support_submission(submission: SupportFormSubmission, ticket_i
         )
         logger.info(f"Message stored for conversation: {conversation_id}")
 
-        # 4. Create ticket
+        # 4. Create ticket — use the frontend-generated ticket_id so the UUID
+        #    returned to the user matches what is stored in the database.
         ticket = await create_ticket(
             db_manager,
             customer_id=customer_id,
+            ticket_id=ticket_id,
             conversation_id=conversation_id,
             source_channel='web_form',
             category=submission.category.value,
@@ -266,53 +268,99 @@ async def submit_support_form(
 
 
 @router.get("/ticket/{ticket_id}", response_model=TicketStatusResponse)
-async def get_ticket_status(ticket_id: str):
+async def get_ticket_status(ticket_id: str, request: Request):
     """
-    Get ticket status and conversation history.
-    
+    Get ticket status and conversation history from the database.
+
+    Flow:
+    1. Validate ticket_id is a UUID
+    2. Look up the ticket → 404 if not found
+    3. Fetch conversation messages ordered by created_at
+    4. Return status + messages list
+
     Returns:
     - Current ticket status
-    - All messages in conversation
-    - Timestamps
-    
-    If ticket not found: 404
+    - All messages in conversation (role, content, timestamp)
+    - Ticket created_at and last_updated timestamps
     """
+    import uuid as _uuid
+
+    # Validate UUID format
     try:
-        # In a real implementation, you would fetch from the database
-        # For now, we'll return a mock response
-        # This would involve querying the database for the ticket and conversation history
-        
-        # Mock response for now
-        # In a real implementation, you would:
-        # 1. Query the tickets table for the ticket
-        # 2. Query the conversations table for the conversation
-        # 3. Query the messages table for all messages in the conversation
-        # 4. Return the appropriate response
-        
-        # For now, return a mock response
-        return TicketStatusResponse(
-            ticket_id=ticket_id,
-            status="open",
-            messages=[
+        ticket_uuid = _uuid.UUID(ticket_id)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid ticket ID format")
+
+    db_manager = getattr(request.app.state, 'db_manager', None)
+    if db_manager is None or db_manager.pool is None:
+        raise HTTPException(status_code=503, detail="Database unavailable")
+
+    try:
+        async with db_manager.pool.acquire() as conn:
+            # 1. Fetch ticket + conversation meta
+            row = await conn.fetchrow(
+                """
+                SELECT t.id            AS ticket_id,
+                       t.status        AS ticket_status,
+                       t.created_at    AS ticket_created_at,
+                       t.resolved_at   AS ticket_resolved_at,
+                       t.conversation_id
+                FROM tickets t
+                WHERE t.id = $1
+                """,
+                ticket_uuid,
+            )
+
+            if not row:
+                raise HTTPException(status_code=404, detail="Ticket not found")
+
+            ticket_status   = row["ticket_status"]
+            ticket_created  = row["ticket_created_at"]
+            conversation_id = row["conversation_id"]
+
+            # 2. Fetch messages for the conversation
+            messages_rows = []
+            if conversation_id:
+                messages_rows = await conn.fetch(
+                    """
+                    SELECT id, role, content, created_at
+                    FROM messages
+                    WHERE conversation_id = $1
+                    ORDER BY created_at ASC
+                    """,
+                    conversation_id,
+                )
+
+            messages = [
                 {
-                    "id": "msg_1",
-                    "content": "Customer submitted a support request via web form",
-                    "role": "system",
-                    "timestamp": datetime.utcnow().isoformat()
-                },
-                {
-                    "id": "msg_2",
-                    "content": "Our AI assistant is reviewing your request",
-                    "role": "agent",
-                    "timestamp": datetime.utcnow().isoformat()
+                    "id":        str(m["id"]),
+                    "role":      m["role"],
+                    "content":   m["content"],
+                    "timestamp": m["created_at"].isoformat(),
                 }
-            ],
-            created_at=datetime.utcnow().isoformat(),
-            last_updated=datetime.utcnow().isoformat()
-        )
-    
+                for m in messages_rows
+            ]
+
+            # Determine last_updated
+            if messages:
+                last_updated = messages[-1]["timestamp"]
+            elif row["ticket_resolved_at"]:
+                last_updated = row["ticket_resolved_at"].isoformat()
+            else:
+                last_updated = ticket_created.isoformat()
+
+            return TicketStatusResponse(
+                ticket_id=ticket_id,
+                status=ticket_status,
+                messages=messages,
+                created_at=ticket_created.isoformat(),
+                last_updated=last_updated,
+            )
+
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error in get_ticket_status: {e}")
+        logger.error(f"Error in get_ticket_status: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
 

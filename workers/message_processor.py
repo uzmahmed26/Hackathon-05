@@ -19,6 +19,7 @@ from channels.gmail_handler import GmailHandler
 from channels.whatsapp_handler import WhatsAppHandler
 from infrastructure.redis_queue import RedisConsumer
 from database.queries import DatabaseManager
+from kafka_client import FTEKafkaConsumer, TOPICS
 
 
 # Initialize logger
@@ -105,23 +106,41 @@ class UnifiedMessageProcessor:
         await self._consume_messages()
     
     async def _consume_messages(self):
-        """Main message consumption loop."""
-        logger.info("Starting message consumption from 'tickets:incoming' stream")
-        
-        # In a real implementation, we would use the Redis consumer
-        # For now, we'll simulate the consumption
+        """
+        Main message consumption loop.
+
+        Consumes from the Kafka topic ``fte.tickets.incoming`` using
+        FTEKafkaConsumer.  Messages are routed to ``process_message`` which
+        handles the full 10-step pipeline (resolve customer → agent → store
+        → metrics).  Failed messages are committed so the consumer doesn't
+        stall on poison pills; the error is logged and handle_error() is
+        called instead.
+
+        Reconnects automatically on transient Kafka errors.
+        """
+        topic = TOPICS["tickets_incoming"]  # "fte.tickets.incoming"
+        group_id = "fte-message-processor"
+        logger.info(f"Starting Kafka consumption from topic '{topic}' (group={group_id})")
+
         while self.running:
+            consumer = FTEKafkaConsumer(topics=[topic], group_id=group_id)
             try:
-                # Simulate message consumption
-                # In a real implementation, this would be:
-                # await self.redis_consumer.start('tickets:incoming', self.process_message)
-                
-                # For demo purposes, we'll just sleep
-                await asyncio.sleep(1)
-                
+                await consumer.start()
+                await consumer.consume(
+                    handler=self.process_message,
+                    error_topic=TOPICS["dlq"],
+                )
             except Exception as e:
-                logger.error(f"Error in message consumption loop: {e}", exc_info=True)
-                await asyncio.sleep(5)  # Wait before retrying
+                logger.error(
+                    f"Kafka consumer error: {e} — reconnecting in 5 s",
+                    exc_info=True,
+                )
+                await asyncio.sleep(5)
+            finally:
+                try:
+                    await consumer.stop()
+                except Exception:
+                    pass
     
     async def process_message(self, stream: str, message: dict):
         """
@@ -226,75 +245,132 @@ class UnifiedMessageProcessor:
     async def resolve_customer(self, message: dict) -> str:
         """
         Identify or create customer from message identifiers.
-        
-        Logic:
-        - Email messages: Use email address as primary identifier
-        - WhatsApp: Use phone number
-        - Web form: Use email address
-        
-        If customer exists with that identifier → return existing customer_id
-        If not → create new customer
-        
-        Handle cross-channel identification:
-        - If email matches existing customer → link phone to that customer
-        - If phone matches existing customer → link email to that customer
+
+        Cross-channel identity resolution order:
+        1. Email → check customers.email (primary column)
+        2. Email → check customer_identifiers for type='email'
+           (catches customers first created via WhatsApp who later email)
+        3. Phone → check customer_identifiers for type='whatsapp'
+        4. If still no match → create new customer
+
+        Whenever a match is found via one identifier and the other
+        identifier is also present, we link them to the same customer_id
+        so Email ↔ WhatsApp continuity is maintained.
         """
         async with self._get_conn() as conn:
             email = message.get('customer_email')
             phone = message.get('customer_phone')
             name = message.get('customer_name', '')
-            
-            # Try email first
-            if email:
+            email_lower = email.lower() if email else None
+
+            # ── 1. Look up by email in the main customers table ────────────
+            if email_lower:
                 customer = await conn.fetchrow(
-                    "SELECT id FROM customers WHERE email = $1", 
-                    email.lower()
+                    "SELECT id FROM customers WHERE email = $1",
+                    email_lower,
                 )
                 if customer:
-                    # Link phone if provided and not already linked
+                    customer_id = customer['id']
+                    # Cross-link: store the WhatsApp identifier
                     if phone:
-                        await conn.execute("""
-                            INSERT INTO customer_identifiers (customer_id, identifier_type, identifier_value)
+                        await conn.execute(
+                            """
+                            INSERT INTO customer_identifiers
+                                (customer_id, identifier_type, identifier_value)
                             VALUES ($1, 'whatsapp', $2)
                             ON CONFLICT (identifier_type, identifier_value) DO NOTHING
-                        """, customer['id'], phone)
-                    return str(customer['id'])
-            
-            # Try phone
+                            """,
+                            customer_id, phone,
+                        )
+                    return str(customer_id)
+
+            # ── 2. Look up by email in customer_identifiers table ──────────
+            #    Handles: WhatsApp-first customers who later send an email
+            if email_lower:
+                row = await conn.fetchrow(
+                    """
+                    SELECT customer_id FROM customer_identifiers
+                    WHERE identifier_type = 'email' AND identifier_value = $1
+                    """,
+                    email_lower,
+                )
+                if row:
+                    customer_id = row['customer_id']
+                    # Backfill email into customers table if still NULL
+                    await conn.execute(
+                        "UPDATE customers SET email = $1 WHERE id = $2 AND email IS NULL",
+                        email_lower, customer_id,
+                    )
+                    # Cross-link phone
+                    if phone:
+                        await conn.execute(
+                            """
+                            INSERT INTO customer_identifiers
+                                (customer_id, identifier_type, identifier_value)
+                            VALUES ($1, 'whatsapp', $2)
+                            ON CONFLICT (identifier_type, identifier_value) DO NOTHING
+                            """,
+                            customer_id, phone,
+                        )
+                    return str(customer_id)
+
+            # ── 3. Look up by phone (WhatsApp) ─────────────────────────────
             if phone:
-                identifier = await conn.fetchrow("""
+                row = await conn.fetchrow(
+                    """
                     SELECT customer_id FROM customer_identifiers
                     WHERE identifier_type = 'whatsapp' AND identifier_value = $1
-                """, phone)
-                if identifier:
-                    # Link email if provided and not already linked
-                    if email:
+                    """,
+                    phone,
+                )
+                if row:
+                    customer_id = row['customer_id']
+                    # Cross-link email
+                    if email_lower:
                         await conn.execute(
                             "UPDATE customers SET email = $1 WHERE id = $2 AND email IS NULL",
-                            email.lower(), identifier['customer_id']
+                            email_lower, customer_id,
                         )
-                    return str(identifier['customer_id'])
-            
-            # Create new customer
-            customer_id = await conn.fetchval("""
+                        await conn.execute(
+                            """
+                            INSERT INTO customer_identifiers
+                                (customer_id, identifier_type, identifier_value)
+                            VALUES ($1, 'email', $2)
+                            ON CONFLICT (identifier_type, identifier_value) DO NOTHING
+                            """,
+                            customer_id, email_lower,
+                        )
+                    return str(customer_id)
+
+            # ── 4. Create new customer ─────────────────────────────────────
+            customer_id = await conn.fetchval(
+                """
                 INSERT INTO customers (email, phone, name)
                 VALUES ($1, $2, $3)
                 RETURNING id
-            """, email.lower() if email else None, phone, name)
-            
-            # Add identifiers
-            if email:
-                await conn.execute("""
-                    INSERT INTO customer_identifiers (customer_id, identifier_type, identifier_value)
+                """,
+                email_lower, phone, name,
+            )
+
+            if email_lower:
+                await conn.execute(
+                    """
+                    INSERT INTO customer_identifiers
+                        (customer_id, identifier_type, identifier_value)
                     VALUES ($1, 'email', $2)
-                """, customer_id, email.lower())
-            
+                    """,
+                    customer_id, email_lower,
+                )
             if phone:
-                await conn.execute("""
-                    INSERT INTO customer_identifiers (customer_id, identifier_type, identifier_value)
+                await conn.execute(
+                    """
+                    INSERT INTO customer_identifiers
+                        (customer_id, identifier_type, identifier_value)
                     VALUES ($1, 'whatsapp', $2)
-                """, customer_id, phone)
-            
+                    """,
+                    customer_id, phone,
+                )
+
             logger.info(f"Created new customer: {customer_id}")
             return str(customer_id)
     

@@ -138,6 +138,18 @@ CREATE INDEX idx_agent_metrics_name ON agent_metrics(metric_name);
 CREATE INDEX idx_agent_metrics_recorded_at ON agent_metrics(recorded_at);
 CREATE INDEX idx_agent_metrics_channel ON agent_metrics(channel);
 
+-- 9. users table (portal authentication)
+CREATE TABLE IF NOT EXISTS users (
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email         VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    name          VARCHAR(255) NOT NULL,
+    is_active     BOOLEAN DEFAULT TRUE,
+    created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
 -- Insert default channel configurations
 INSERT INTO channel_configs (channel, enabled, config, response_template, max_response_length) VALUES
 ('email', true, '{"smtp_host": "smtp.gmail.com", "smtp_port": 587}', 'Dear {{customer_name}},\n\n{{response_content}}\n\nBest regards,\nTechCorp Support', 1000),

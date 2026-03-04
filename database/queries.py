@@ -223,34 +223,52 @@ class DatabaseManager:
     async def create_ticket(self, customer_id: uuid.UUID, **kwargs) -> uuid.UUID:
         """
         Create a support ticket
-        
+
         Args:
             customer_id: UUID of the customer
             **kwargs: Ticket properties (conversation_id, source_channel, category, etc.)
-            
+                      Pass ticket_id=<uuid> to use a specific UUID instead of gen_random_uuid()
+
         Returns:
             UUID of the created ticket
         """
         async with self.pool.acquire() as conn:
             # Extract ticket properties with defaults
+            ticket_id = kwargs.get('ticket_id')
             conversation_id = kwargs.get('conversation_id')
             source_channel = kwargs.get('source_channel')
             category = kwargs.get('category')
             priority = kwargs.get('priority', 'medium')
             status = kwargs.get('status', 'open')
             resolution_notes = kwargs.get('resolution_notes')
-            
-            query = """
-                INSERT INTO tickets (
-                    conversation_id, customer_id, source_channel, category,
+
+            if ticket_id is not None:
+                # Use the caller-supplied UUID (e.g. from web form so frontend UUID matches DB)
+                if isinstance(ticket_id, str):
+                    ticket_id = uuid.UUID(ticket_id)
+                query = """
+                    INSERT INTO tickets (
+                        id, conversation_id, customer_id, source_channel, category,
+                        priority, status, resolution_notes
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    RETURNING id
+                """
+                result = await conn.fetchrow(
+                    query, ticket_id, conversation_id, customer_id, source_channel,
+                    category, priority, status, resolution_notes
+                )
+            else:
+                query = """
+                    INSERT INTO tickets (
+                        conversation_id, customer_id, source_channel, category,
+                        priority, status, resolution_notes
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                    RETURNING id
+                """
+                result = await conn.fetchrow(
+                    query, conversation_id, customer_id, source_channel, category,
                     priority, status, resolution_notes
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-                RETURNING id
-            """
-            result = await conn.fetchrow(
-                query, conversation_id, customer_id, source_channel, category,
-                priority, status, resolution_notes
-            )
+                )
             return result['id']
     
     async def search_knowledge_base(self, query_embedding: List[float], limit: int = 5) -> List[Dict]:

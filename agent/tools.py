@@ -10,7 +10,7 @@ import asyncpg
 import os
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from enum import Enum
 
 from channels.gmail_handler import GmailHandler
@@ -47,6 +47,8 @@ class Channel(str, Enum):
 
 class KnowledgeSearchInput(BaseModel):
     """Input schema for knowledge base search."""
+    model_config = ConfigDict(strict=True)
+
     query: str
     max_results: int = 5
     category: Optional[str] = None
@@ -54,6 +56,8 @@ class KnowledgeSearchInput(BaseModel):
 
 class TicketInput(BaseModel):
     """Input schema for ticket creation."""
+    model_config = ConfigDict(strict=True)
+
     customer_id: str
     issue: str
     priority: str = "medium"
@@ -63,11 +67,15 @@ class TicketInput(BaseModel):
 
 class CustomerHistoryInput(BaseModel):
     """Input schema for customer history lookup."""
+    model_config = ConfigDict(strict=True)
+
     customer_id: str
 
 
 class EscalationInput(BaseModel):
     """Input schema for human escalation."""
+    model_config = ConfigDict(strict=True)
+
     ticket_id: str
     reason: str
     urgency: str = "normal"
@@ -75,6 +83,8 @@ class EscalationInput(BaseModel):
 
 class ResponseInput(BaseModel):
     """Input schema for sending customer response."""
+    model_config = ConfigDict(strict=True)
+
     ticket_id: str
     message: str
     channel: Channel
@@ -334,8 +344,14 @@ async def send_response(
 
 # ─── Channel Formatting ───────────────────────────────────────────────────────
 
-def _format_for_channel(response: str, channel: str) -> str:
-    """Format the response appropriately for the given channel."""
+def format_for_channel(response: str, channel: str) -> str:
+    """
+    Format the response appropriately for the given channel.
+
+    - email:    Formal greeting, full body, signature (no length limit)
+    - whatsapp: Conversational, hard-truncated to 300 chars, 'human' hint
+    - web_form: Semi-formal, portal link footer
+    """
     if channel == Channel.EMAIL.value:
         return (
             f"Dear Customer,\n\n"
@@ -349,10 +365,12 @@ def _format_for_channel(response: str, channel: str) -> str:
         )
 
     elif channel == Channel.WHATSAPP.value:
-        # Trim to 300 chars for WhatsApp preferred limit
-        if len(response) > 300:
-            response = response[:297] + "..."
-        return f"{response}\n\nReply for more help or type 'human' for live support."
+        # WhatsApp: hard cap at 300 chars for the full outgoing message
+        FOOTER = "\n\nReply for more help or type 'human' for live support."
+        max_body = 300 - len(FOOTER)
+        if len(response) > max_body:
+            response = response[: max_body - 3] + "..."
+        return f"{response}{FOOTER}"
 
     else:  # web_form
         return (
@@ -360,3 +378,7 @@ def _format_for_channel(response: str, channel: str) -> str:
             f"---\n"
             f"Need more help? Reply to this message or visit our support portal."
         )
+
+
+# Keep private alias for backwards compatibility
+_format_for_channel = format_for_channel

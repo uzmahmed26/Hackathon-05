@@ -5,6 +5,19 @@
 
 import React, { useState } from 'react';
 
+/** Return the stored JWT from localStorage (if running in a browser). */
+function getStoredToken() {
+  try { return localStorage.getItem('auth_token') || null; } catch { return null; }
+}
+
+/** Build fetch headers, attaching an Authorization header when a token exists. */
+function buildHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  const token = getStoredToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
+
 const SupportForm = ({ apiEndpoint = '/api/support/submit', onSuccess, theme = 'light' }) => {
   // Define initial form state
   const initialFormData = {
@@ -105,24 +118,27 @@ const SupportForm = ({ apiEndpoint = '/api/support/submit', onSuccess, theme = '
       // Submit form data
       const response = await fetch(apiEndpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: buildHeaders(),
         body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Submission failed');
+        const detail = errorData.detail;
+        let msg = 'Submission failed. Please try again.';
+        if (Array.isArray(detail))           msg = detail.map(d => d.msg).join(', ');
+        else if (typeof detail === 'string')  msg = detail;
+        throw new Error(msg);
       }
 
       const result = await response.json();
-      setTicketId(result.ticketId || 'N/A');
+      // API returns snake_case ticket_id (not ticketId)
+      setTicketId(result.ticket_id || result.ticketId || 'N/A');
       setStatus('success');
 
       // Call success callback if provided
       if (onSuccess && typeof onSuccess === 'function') {
-        onSuccess(result.ticketId || 'N/A');
+        onSuccess(result.ticket_id || result.ticketId || 'N/A');
       }
     } catch (err) {
       setError(err.message);

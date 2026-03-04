@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -98,10 +96,17 @@ services:
       context: .
       dockerfile: Dockerfile
     command: python workers/message_processor.py
+    healthcheck:
+      test: ["CMD", "sh", "-c", "cat /proc/1/cmdline | tr '\\0' ' ' | grep -q message_processor"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     volumes:
       - .:/app
       - ./credentials:/app/credentials:ro
     environment:
+      PYTHONPATH: /app
       # Database
       DATABASE_URL: postgresql://fte_user:fte_password@postgres:5432/fte_db
       
@@ -149,6 +154,8 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
     networks:
       - fte-network
     restart: unless-stopped
@@ -159,12 +166,16 @@ services:
     container_name: fte-kafka
     depends_on:
       - zookeeper
+    volumes:
+      - kafka_data:/var/lib/kafka/data
     ports:
       - "9092:9092"
+      - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -176,8 +187,9 @@ services:
     healthcheck:
       test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
       interval: 30s
-      timeout: 10s
+      timeout: 30s
       retries: 5
+      start_period: 60s
 
   # Kafka UI (Development only)
   kafka-ui:
@@ -201,9 +213,16 @@ services:
       context: .
       dockerfile: Dockerfile
     command: python workers/metrics_collector.py
+    healthcheck:
+      test: ["CMD", "sh", "-c", "cat /proc/1/cmdline | tr '\\0' ' ' | grep -q metrics_collector"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     volumes:
       - .:/app
     environment:
+      PYTHONPATH: /app
       DATABASE_URL: postgresql://fte_user:fte_password@postgres:5432/fte_db
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       REDIS_URL: redis://redis:6379

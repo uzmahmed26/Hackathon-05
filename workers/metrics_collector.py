@@ -47,16 +47,27 @@ class MetricsCollector:
 
     async def _consume_metrics(self):
         """Consume metrics events from Kafka."""
-        consumer = FTEKafkaConsumer(
-            topics=[TOPICS["metrics"]],
-            group_id="fte-metrics-collector",
-        )
-        await consumer.start()
-
-        try:
-            await consumer.consume(self._process_metric)
-        finally:
-            await consumer.stop()
+        retry_delay = 5
+        max_delay = 60
+        while self._running:
+            consumer = FTEKafkaConsumer(
+                topics=[TOPICS["metrics"]],
+                group_id="fte-metrics-collector",
+            )
+            try:
+                await consumer.start()
+                retry_delay = 5  # reset on success
+                await consumer.consume(self._process_metric)
+            except Exception as e:
+                logger.warning(f"Kafka connection failed: {e}. Retrying in {retry_delay}s...")
+                try:
+                    await consumer.stop()
+                except Exception:
+                    pass
+                await asyncio.sleep(retry_delay)
+                retry_delay = min(retry_delay * 2, max_delay)
+            else:
+                await consumer.stop()
 
     async def _process_metric(self, topic: str, event: dict):
         """Process a single metrics event."""
