@@ -30,9 +30,145 @@
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #151a28; }
     ::-webkit-scrollbar-thumb { background: #2e3650; border-radius: 4px; }
+
+    /* Auth overlay */
+    #auth-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(10,13,22,0.97);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #auth-overlay.hidden { display: none; }
   </style>
 </head>
 <body class="min-h-screen" style="background: #0f1320;">
+
+<!-- ════════════════════════════════════════════════════════════
+     AUTH OVERLAY  (shown until user is signed in)
+════════════════════════════════════════════════════════════ -->
+<div id="auth-overlay">
+  <div class="w-full max-w-md mx-4">
+
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style="background:#f97316;">
+        <svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold text-white">TechCorp Support</h1>
+      <p class="text-sm mt-1" style="color:#64748b;">Sign in to submit and track your requests</p>
+    </div>
+
+    <!-- Card -->
+    <div class="rounded-2xl overflow-hidden" style="background:#151a28; border:1px solid #1e2433;">
+
+      <!-- Tabs -->
+      <div class="flex" style="border-bottom:1px solid #1e2433;">
+        <button id="auth-tab-login" onclick="showAuthTab('login')"
+          class="flex-1 py-3.5 text-sm font-medium transition"
+          style="color:#f97316; border-bottom:2px solid #f97316;">
+          Sign In
+        </button>
+        <button id="auth-tab-signup" onclick="showAuthTab('signup')"
+          class="flex-1 py-3.5 text-sm font-medium transition"
+          style="color:#4a5568; border-bottom:2px solid transparent;">
+          Create Account
+        </button>
+      </div>
+
+      <div class="p-8">
+
+        <!-- Auth error banner -->
+        <div id="auth-error" class="hidden mb-5 p-3 rounded-lg text-sm flex gap-2 items-start"
+          style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5;">
+          <svg class="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span id="auth-error-text"></span>
+        </div>
+
+        <!-- ── LOGIN FORM ── -->
+        <form id="login-form" onsubmit="handleLogin(event)" novalidate class="fade-in">
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-1.5" style="color:#94a3b8;">Email Address</label>
+            <input type="email" id="login-email" placeholder="you@company.com" class="input-field" autocomplete="email" />
+          </div>
+          <div class="mb-6">
+            <label class="block text-sm font-medium mb-1.5" style="color:#94a3b8;">Password</label>
+            <div class="relative">
+              <input type="password" id="login-password" placeholder="••••••••" class="input-field" autocomplete="current-password" style="padding-right:42px;" />
+              <button type="button" onclick="togglePassword('login-password', 'eye-login')"
+                class="absolute right-3 top-1/2 -translate-y-1/2" style="color:#4a5568;" tabindex="-1">
+                <svg id="eye-login" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <button type="submit" id="login-btn"
+            class="w-full py-3 text-white font-semibold rounded-lg text-sm flex items-center justify-center gap-2 transition"
+            style="background:#f97316; box-shadow:0 0 20px rgba(249,115,22,0.25);"
+            onmouseover="this.style.background='#ea580c'" onmouseout="this.style.background='#f97316'">
+            <span id="login-btn-text">Sign In</span>
+            <svg id="login-spinner" class="hidden animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </button>
+          <p class="text-center text-xs mt-4" style="color:#475569;">
+            No account? <button type="button" onclick="showAuthTab('signup')" class="underline" style="color:#fb923c;">Create one</button>
+          </p>
+        </form>
+
+        <!-- ── SIGNUP FORM ── -->
+        <form id="signup-form" onsubmit="handleSignup(event)" novalidate class="hidden fade-in">
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-1.5" style="color:#94a3b8;">Full Name</label>
+            <input type="text" id="signup-name" placeholder="Jane Smith" class="input-field" autocomplete="name" />
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-1.5" style="color:#94a3b8;">Email Address</label>
+            <input type="email" id="signup-email" placeholder="you@company.com" class="input-field" autocomplete="email" />
+          </div>
+          <div class="mb-6">
+            <label class="block text-sm font-medium mb-1.5" style="color:#94a3b8;">Password <span class="font-normal" style="color:#475569;">(min 8 chars)</span></label>
+            <div class="relative">
+              <input type="password" id="signup-password" placeholder="••••••••" class="input-field" autocomplete="new-password" style="padding-right:42px;" />
+              <button type="button" onclick="togglePassword('signup-password', 'eye-signup')"
+                class="absolute right-3 top-1/2 -translate-y-1/2" style="color:#4a5568;" tabindex="-1">
+                <svg id="eye-signup" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <button type="submit" id="signup-btn"
+            class="w-full py-3 text-white font-semibold rounded-lg text-sm flex items-center justify-center gap-2 transition"
+            style="background:#f97316; box-shadow:0 0 20px rgba(249,115,22,0.25);"
+            onmouseover="this.style.background='#ea580c'" onmouseout="this.style.background='#f97316'">
+            <span id="signup-btn-text">Create Account</span>
+            <svg id="signup-spinner" class="hidden animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </button>
+          <p class="text-center text-xs mt-4" style="color:#475569;">
+            Already have an account? <button type="button" onclick="showAuthTab('login')" class="underline" style="color:#fb923c;">Sign in</button>
+          </p>
+        </form>
+
+      </div>
+    </div>
+
+    <p class="text-center text-xs mt-6" style="color:#334155;">
+      &copy; 2026 TechCorp &middot; ProjectFlow Pro
+    </p>
+  </div>
+</div>
+<!-- END AUTH OVERLAY -->
 
   <!-- Top Nav -->
   <header style="background: #151a28; border-bottom: 1px solid #1e2433;" class="sticky top-0 z-10">
@@ -49,10 +185,24 @@
           <span class="text-slate-500 text-sm"> / ProjectFlow Pro</span>
         </div>
       </div>
-      <div class="flex items-center gap-2 text-xs px-3 py-1 rounded-full"
-        style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #34d399;">
-        <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full inline-block animate-pulse"></span>
-        AI Support Active — Avg. response &lt; 5 min
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 text-xs px-3 py-1 rounded-full"
+          style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #34d399;">
+          <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full inline-block animate-pulse"></span>
+          AI Support Active — Avg. response &lt; 5 min
+        </div>
+        <!-- User badge (shown when logged in) -->
+        <div id="user-badge" class="hidden items-center gap-2">
+          <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+            style="background:rgba(249,115,22,0.2); color:#fb923c;" id="user-avatar">J</div>
+          <span class="text-sm font-medium text-white" id="user-display-name"></span>
+          <button onclick="handleLogout()"
+            class="text-xs px-2.5 py-1 rounded-lg transition"
+            style="border:1px solid #2e3650; color:#64748b;"
+            onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#64748b'">
+            Sign Out
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -365,7 +515,146 @@
   </footer>
 
 <script>
-  const API_BASE = 'http://localhost:8000';
+  const API_BASE = 'http://127.0.0.1:8000';
+
+  // ── Password toggle ────────────────────────────────────────
+  function togglePassword(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon  = document.getElementById(iconId);
+    const show  = input.type === 'password';
+    input.type  = show ? 'text' : 'password';
+    icon.innerHTML = show
+      ? `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>`
+      : `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`;
+    icon.style.color = show ? '#f97316' : '#4a5568';
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  AUTH
+  // ══════════════════════════════════════════════════════════
+
+  function getToken() { return localStorage.getItem('auth_token'); }
+  function getUser()  { try { return JSON.parse(localStorage.getItem('auth_user') || 'null'); } catch { return null; } }
+
+  function saveSession(token, user) {
+    localStorage.setItem('auth_token', token);
+    localStorage.setItem('auth_user', JSON.stringify(user));
+  }
+
+  function clearSession() {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+  }
+
+  // Show/hide auth overlay & update navbar badge
+  function applyAuthState() {
+    const user = getUser();
+    const overlay = document.getElementById('auth-overlay');
+    const badge   = document.getElementById('user-badge');
+    if (user && getToken()) {
+      overlay.classList.add('hidden');
+      badge.classList.remove('hidden');
+      badge.classList.add('flex');
+      document.getElementById('user-display-name').textContent = user.name;
+      document.getElementById('user-avatar').textContent = user.name.charAt(0).toUpperCase();
+    } else {
+      overlay.classList.remove('hidden');
+      badge.classList.add('hidden');
+      badge.classList.remove('flex');
+    }
+  }
+
+  function showAuthTab(tab) {
+    const isLogin  = tab === 'login';
+    document.getElementById('login-form').classList.toggle('hidden', !isLogin);
+    document.getElementById('signup-form').classList.toggle('hidden', isLogin);
+    document.getElementById('auth-error').classList.add('hidden');
+
+    const active   = 'color:#f97316; border-bottom:2px solid #f97316;';
+    const inactive = 'color:#4a5568; border-bottom:2px solid transparent;';
+    document.getElementById('auth-tab-login').style.cssText  = isLogin ? active : inactive;
+    document.getElementById('auth-tab-signup').style.cssText = isLogin ? inactive : active;
+  }
+
+  function showAuthError(msg) {
+    const el = document.getElementById('auth-error');
+    document.getElementById('auth-error-text').textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  function setAuthLoading(formId, loading) {
+    const btn     = document.getElementById(formId + '-btn');
+    const txt     = document.getElementById(formId + '-btn-text');
+    const spinner = document.getElementById(formId + '-spinner');
+    btn.disabled = loading;
+    spinner.classList.toggle('hidden', !loading);
+    txt.textContent = loading
+      ? (formId === 'login' ? 'Signing in…' : 'Creating account…')
+      : (formId === 'login' ? 'Sign In' : 'Create Account');
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    document.getElementById('auth-error').classList.add('hidden');
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    if (!email || !password) { showAuthError('Please fill in all fields.'); return; }
+
+    setAuthLoading('login', true);
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showAuthError(data.detail || 'Login failed.'); return; }
+      saveSession(data.access_token, data.user);
+      applyAuthState();
+    } catch {
+      showAuthError('Network error. Is the API running?');
+    } finally {
+      setAuthLoading('login', false);
+    }
+  }
+
+  async function handleSignup(e) {
+    e.preventDefault();
+    document.getElementById('auth-error').classList.add('hidden');
+    const name     = document.getElementById('signup-name').value.trim();
+    const email    = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+
+    if (!name || !email || !password) { showAuthError('Please fill in all fields.'); return; }
+    if (password.length < 8) { showAuthError('Password must be at least 8 characters.'); return; }
+
+    setAuthLoading('signup', true);
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showAuthError(data.detail || 'Signup failed.'); return; }
+      saveSession(data.access_token, data.user);
+      applyAuthState();
+    } catch {
+      showAuthError('Network error. Is the API running?');
+    } finally {
+      setAuthLoading('signup', false);
+    }
+  }
+
+  function handleLogout() {
+    clearSession();
+    applyAuthState();
+    showAuthTab('login');
+  }
+
+  // On page load — restore session if token exists
+  applyAuthState();
 
   // ── Tab switching ──────────────────────────────────────────
   function showTab(tab) {

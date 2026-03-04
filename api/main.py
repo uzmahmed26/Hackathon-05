@@ -15,11 +15,16 @@ import asyncio
 from typing import Dict, Any, Optional
 import asyncpg
 import redis.asyncio as redis
+from dotenv import load_dotenv
+from pathlib import Path
+# Load .env from project root (works regardless of working directory)
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 # Import routers
 from channels.gmail_webhook import router as gmail_router
 from channels.whatsapp_webhook import router as whatsapp_router
 from channels.web_form_handler import router as webform_router
+from api.auth import router as auth_router
 
 # Import infrastructure
 from infrastructure.redis_queue import RedisProducer
@@ -209,6 +214,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 
 # Include routers (routers already define their own prefixes internally)
+app.include_router(auth_router)
 app.include_router(gmail_router)
 app.include_router(whatsapp_router)
 app.include_router(webform_router, prefix="/api", tags=["support"])
