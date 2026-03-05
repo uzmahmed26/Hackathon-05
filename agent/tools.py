@@ -328,7 +328,7 @@ async def send_response(
             pool = await get_db_pool()
             async with pool.acquire() as conn:
                 await conn.execute("""
-                    UPDATE tickets SET status = 'responded'
+                    UPDATE tickets SET status = 'resolved'
                     WHERE id = $1
                 """, uuid.UUID(ticket_id))
         except Exception:

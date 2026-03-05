@@ -88,17 +88,19 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     logger.info("Shutting down application...")
-    
+
     try:
         # Close database manager
-        await app.state.db_manager.close()
-        logger.info("Database manager closed")
-        
+        if app.state.db_manager is not None:
+            await app.state.db_manager.close()
+            logger.info("Database manager closed")
+
         # Close Redis producer
-        if hasattr(app.state.redis_producer, 'client') and app.state.redis_producer.client:
-            await app.state.redis_producer.client.close()
-        logger.info("Redis producer closed")
-        
+        if app.state.redis_producer is not None:
+            if hasattr(app.state.redis_producer, 'client') and app.state.redis_producer.client:
+                await app.state.redis_producer.client.close()
+            logger.info("Redis producer closed")
+
     except Exception as e:
         logger.error(f"Shutdown error: {e}")
     
@@ -119,10 +121,15 @@ app.state.db_manager = None
 app.state.redis_producer = None
 
 # CORS middleware
+import os as _os
+_cors_raw = _os.getenv("CORS_ALLOWED_ORIGINS", "*")
+_cors_origins = ["*"] if _cors_raw.strip() == "*" else _cors_raw.split(",")
+_allow_credentials = _cors_raw.strip() != "*"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials=_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -283,10 +290,12 @@ async def readiness_check():
     Returns 200 when application is ready to serve traffic.
     """
     try:
+        if app.state.db_manager is None:
+            raise RuntimeError("Database not initialized")
         # Quick check - just verify we can access dependencies
         async with app.state.db_manager.pool.acquire() as conn:
             await conn.fetchval("SELECT 1")
-        
+
         return {"status": "ready"}
     except Exception:
         raise HTTPException(status_code=503, detail="Not ready")

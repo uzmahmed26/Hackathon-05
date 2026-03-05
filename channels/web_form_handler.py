@@ -10,7 +10,6 @@ from typing import Optional, List
 from datetime import datetime
 import uuid
 import logging
-import redis
 import json
 from enum import Enum
 
@@ -52,10 +51,6 @@ router = APIRouter(prefix="/support", tags=["web_form"])
 
 # Initialize logger
 logger = logging.getLogger(__name__)
-
-# Initialize Redis connection
-redis_client = redis.Redis(host='localhost', port=6379, db=0)
-
 
 # Enums for validation
 class CategoryEnum(str, Enum):
@@ -139,7 +134,7 @@ class TicketStatusResponse(BaseModel):
 
 
 # Background task to process the submission
-async def process_support_submission(submission: SupportFormSubmission, ticket_id: str, db_manager=None):
+async def process_support_submission(submission: SupportFormSubmission, ticket_id: str, db_manager=None, redis_producer=None):
     """
     Background task to process support form submission.
 
@@ -147,6 +142,7 @@ async def process_support_submission(submission: SupportFormSubmission, ticket_i
         submission: The validated submission data
         ticket_id: The generated ticket ID
         db_manager: DatabaseManager instance (optional, used when available)
+        redis_producer: RedisProducer instance (optional, used when available)
     """
     if db_manager is None:
         logger.warning("db_manager unavailable, skipping DB operations for web form submission")
@@ -193,26 +189,27 @@ async def process_support_submission(submission: SupportFormSubmission, ticket_i
         )
         logger.info(f"Ticket created with ID: {ticket}")
 
-        # 5. Publish to Redis queue
-        message_data = {
-            'channel': 'web_form',
-            'channel_message_id': ticket_id,
-            'customer_email': submission.email,
-            'customer_name': submission.name,
-            'subject': submission.subject,
-            'content': submission.message,
-            'category': submission.category.value,
-            'priority': submission.priority.value,
-            'received_at': datetime.utcnow().isoformat(),
-            'metadata': {
-                'form_version': '1.0',
-                'attachments': submission.attachments or []
+        # 5. Publish to Redis stream for worker consumption
+        if redis_producer is not None:
+            message_data = {
+                'channel': 'web_form',
+                'channel_message_id': ticket_id,
+                'customer_email': submission.email,
+                'customer_name': submission.name,
+                'subject': submission.subject,
+                'content': submission.message,
+                'category': submission.category.value,
+                'priority': submission.priority.value,
+                'received_at': datetime.utcnow().isoformat(),
+                'metadata': json.dumps({
+                    'form_version': '1.0',
+                    'attachments': submission.attachments or []
+                })
             }
-        }
-
-        # Publish to Redis queue
-        redis_client.lpush('tickets:incoming', json.dumps(message_data))
-        logger.info(f"Message published to Redis queue for ticket: {ticket_id}")
+            await redis_producer.publish('tickets:incoming', message_data)
+            logger.info(f"Message published to Redis stream for ticket: {ticket_id}")
+        else:
+            logger.warning(f"Redis unavailable — ticket {ticket_id} stored in DB but not queued for AI processing")
 
     except Exception as e:
         logger.error(f"Error processing support submission: {e}")
@@ -249,11 +246,12 @@ async def submit_support_form(
         ticket_id = str(uuid.uuid4())
         logger.info(f"Processing support form submission with ticket ID: {ticket_id}")
 
-        # Get db_manager from app state if available
+        # Get db_manager and redis_producer from app state if available
         db_manager = getattr(request.app.state, 'db_manager', None)
+        redis_producer = getattr(request.app.state, 'redis_producer', None)
 
         # Add background task to process the submission
-        background_tasks.add_task(process_support_submission, submission, ticket_id, db_manager)
+        background_tasks.add_task(process_support_submission, submission, ticket_id, db_manager, redis_producer)
 
         # Return response immediately
         return SupportFormResponse(
@@ -409,19 +407,12 @@ async def test_submit_support_form(background_tasks: BackgroundTasks):
 async def web_form_handler_health():
     """
     Health check for the web form handler.
-    
+
     Returns:
         200 OK response
     """
-    try:
-        # Check if Redis is reachable
-        redis_client.ping()
-        
-        return {
-            "status": "healthy",
-            "service": "web_form_handler",
-            "timestamp": datetime.utcnow().isoformat() + 'Z'
-        }
-    except Exception as e:
-        logger.error(f"Web form handler health check failed: {e}")
-        raise HTTPException(status_code=500, detail="Health check failed")
+    return {
+        "status": "healthy",
+        "service": "web_form_handler",
+        "timestamp": datetime.utcnow().isoformat() + 'Z'
+    }

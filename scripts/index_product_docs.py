@@ -24,6 +24,10 @@ from typing import Iterator
 
 import asyncpg
 import openai
+from dotenv import load_dotenv
+
+# Load .env from project root before reading any env vars
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 logger = logging.getLogger(__name__)
 
@@ -116,23 +120,37 @@ async def upsert_chunks(
     """
     count = 0
     for chunk, vector in zip(chunks, vectors):
-        # pgvector expects '[x,y,z,...]' string or list via asyncpg codec
-        vec_str = "[" + ",".join(str(v) for v in vector) + "]"
-        await conn.execute(
-            """
-            INSERT INTO knowledge_base (title, content, category, embedding)
-            VALUES ($1, $2, $3, $4::vector)
-            ON CONFLICT (title) DO UPDATE
-                SET content   = EXCLUDED.content,
-                    category  = EXCLUDED.category,
-                    embedding = EXCLUDED.embedding,
-                    updated_at = NOW()
-            """,
-            chunk["title"],
-            chunk["content"],
-            chunk["category"],
-            vec_str,
-        )
+        if vector is not None:
+            vec_str = "[" + ",".join(str(v) for v in vector) + "]"
+            await conn.execute(
+                """
+                INSERT INTO knowledge_base (title, content, category, embedding)
+                VALUES ($1, $2, $3, $4::vector)
+                ON CONFLICT (title) DO UPDATE
+                    SET content   = EXCLUDED.content,
+                        category  = EXCLUDED.category,
+                        embedding = EXCLUDED.embedding,
+                        updated_at = NOW()
+                """,
+                chunk["title"],
+                chunk["content"],
+                chunk["category"],
+                vec_str,
+            )
+        else:
+            await conn.execute(
+                """
+                INSERT INTO knowledge_base (title, content, category)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (title) DO UPDATE
+                    SET content  = EXCLUDED.content,
+                        category = EXCLUDED.category,
+                        updated_at = NOW()
+                """,
+                chunk["title"],
+                chunk["content"],
+                chunk["category"],
+            )
         count += 1
     return count
 
@@ -153,7 +171,7 @@ async def ensure_unique_title_index(conn: asyncpg.Connection) -> None:
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 
-async def run(docs_path: Path, dsn: str) -> None:
+async def run(docs_path: Path, dsn: str, no_embeddings: bool = False) -> None:
     # 1. Read source markdown
     if not docs_path.exists():
         logger.error(f"Docs file not found: {docs_path}")
@@ -167,17 +185,21 @@ async def run(docs_path: Path, dsn: str) -> None:
         logger.error("No chunks extracted — check the markdown format")
         sys.exit(1)
 
-    # 2. Generate embeddings
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        logger.error("OPENAI_API_KEY environment variable not set")
-        sys.exit(1)
+    # 2. Generate embeddings (skip if --no-embeddings or no API key)
+    if no_embeddings:
+        logger.info("Skipping embeddings (--no-embeddings). Keyword search will be used.")
+        vectors = [None] * len(chunks)
+    else:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            logger.error("OPENAI_API_KEY environment variable not set")
+            sys.exit(1)
 
-    oai = openai.AsyncOpenAI(api_key=api_key)
-    texts = [f"{c['title']}\n\n{c['content']}" for c in chunks]
-    logger.info(f"Generating {len(texts)} embeddings via {EMBEDDING_MODEL} ...")
-    vectors = await embed_texts(oai, texts)
-    logger.info("Embeddings generated")
+        oai = openai.AsyncOpenAI(api_key=api_key)
+        texts = [f"{c['title']}\n\n{c['content']}" for c in chunks]
+        logger.info(f"Generating {len(texts)} embeddings via {EMBEDDING_MODEL} ...")
+        vectors = await embed_texts(oai, texts)
+        logger.info("Embeddings generated")
 
     # 3. Upsert into DB
     conn = await asyncpg.connect(dsn)
@@ -210,9 +232,14 @@ def main() -> None:
         ),
         help="PostgreSQL DSN",
     )
+    parser.add_argument(
+        "--no-embeddings",
+        action="store_true",
+        help="Skip OpenAI embedding generation; use keyword search only",
+    )
     args = parser.parse_args()
 
-    asyncio.run(run(args.docs_path, args.dsn))
+    asyncio.run(run(args.docs_path, args.dsn, no_embeddings=args.no_embeddings))
 
 
 if __name__ == "__main__":

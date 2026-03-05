@@ -4,6 +4,7 @@ Implements Redis Streams with consumer groups, retry logic, and dead letter queu
 """
 
 import redis.asyncio as aioredis
+import redis.exceptions as redis_exc
 import asyncio
 import logging
 import uuid
@@ -260,7 +261,7 @@ class RedisQueue:
             # Try to create the consumer group
             await self.client.xgroup_create(stream, group, id='0', mkstream=True)
             self.logger.info(f"Created consumer group '{group}' for stream '{stream}'")
-        except aioredis.exceptions.ResponseError as e:
+        except redis_exc.ResponseError as e:
             if 'BUSYGROUP' in str(e):
                 # Group already exists, which is fine
                 self.logger.debug(f"Consumer group '{group}' already exists for stream '{stream}'")
@@ -548,7 +549,7 @@ class RedisConsumer:
         # Create consumer group
         try:
             await self.client.xgroup_create(stream, group, id='0', mkstream=True)
-        except aioredis.exceptions.ResponseError as e:
+        except redis_exc.ResponseError as e:
             if 'BUSYGROUP' not in str(e):
                 raise
         

@@ -324,9 +324,7 @@ secrets.yml
 *.dump
 *.dmp
 
-# Local test files
-test_*.py
-*_test.py
+# Local test files — not excluded; source lives in tests/
 
 # Local coverage reports
 .coverage.*
@@ -436,9 +434,8 @@ temp/
 # Local virtual environment
 venv*/
 
-# Local test
-test_*.py
-*_test.py
+# Local test databases (not test source files)
+# test_*.py   <- intentionally NOT ignored; test source lives in tests/
 
 # Local coverage
 .coverage*

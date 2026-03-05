@@ -5,6 +5,7 @@ Complete implementation with proper tool definitions and database integration
 
 import asyncio
 import logging
+import os
 from functools import wraps
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
@@ -18,6 +19,7 @@ from infrastructure.redis_queue import RedisProducer
 from channels.gmail_handler import GmailHandler
 from channels.whatsapp_handler import WhatsAppHandler
 from database.queries import DatabaseManager
+from agent.hf_client import QwenClient
 
 
 # Initialize logger
@@ -29,7 +31,7 @@ def tool(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         # Add logging
-        logger.info(f"Tool called: {func.__name__}", extra={'args': args, 'kwargs': kwargs})
+        logger.info(f"Tool called: {func.__name__} | tool_args={args} | tool_kwargs={kwargs}")
         
         try:
             result = await func(*args, **kwargs)
@@ -79,7 +81,7 @@ async def search_knowledge_base(input: KnowledgeSearchInput) -> str:
     """
     try:
         # Initialize database manager
-        db_manager = DatabaseManager(dsn="postgresql://username:password@localhost/customer_success_db")
+        db_manager = DatabaseManager(dsn=os.getenv("DATABASE_URL", "postgresql://fte_user:fte_password@localhost:5432/fte_db"))
         await db_manager.connect()
         
         # In a real implementation, we would generate embeddings for the query
@@ -134,13 +136,15 @@ async def create_ticket(input: TicketInput) -> str:
     """
     try:
         # Initialize database manager
-        db_manager = DatabaseManager(dsn="postgresql://username:password@localhost/customer_success_db")
+        db_manager = DatabaseManager(dsn=os.getenv("DATABASE_URL", "postgresql://fte_user:fte_password@localhost:5432/fte_db"))
         await db_manager.connect()
         
         # Create ticket using the database manager
         ticket_id = await db_manager.create_ticket(
             customer_id=uuid.UUID(input.customer_id),
-            **input.dict(exclude={'customer_id'})  # Pass other fields as kwargs
+            source_channel=input.channel,
+            category=input.category,
+            priority=input.priority,
         )
         
         await db_manager.close()
@@ -175,7 +179,7 @@ async def get_customer_history(input: CustomerHistoryInput) -> str:
     """
     try:
         # Initialize database manager
-        db_manager = DatabaseManager(dsn="postgresql://username:password@localhost/customer_success_db")
+        db_manager = DatabaseManager(dsn=os.getenv("DATABASE_URL", "postgresql://fte_user:fte_password@localhost:5432/fte_db"))
         await db_manager.connect()
         
         # In a real implementation, we would fetch from the database
@@ -340,7 +344,7 @@ class CustomerSuccessAgent:
     ```
     """
     
-    def __init__(self, model: str = "qwen2.5-72b-instruct"):
+    def __init__(self, model: str = "Qwen/Qwen2.5-7B-Instruct"):
         self.model = model
         self.tools = [
             search_knowledge_base,
@@ -351,6 +355,9 @@ class CustomerSuccessAgent:
         ]
         self.system_prompt = self._load_system_prompt()
         self.logger = logging.getLogger(__name__)
+        # Initialize HuggingFace/Qwen client (free tier)
+        hf_token = os.getenv("HF_TOKEN")
+        self.qwen = QwenClient(token=hf_token, model=self.model) if hf_token else None
     
     def _load_system_prompt(self) -> str:
         return """You are a Customer Success agent for TechCorp SaaS.
@@ -433,27 +440,31 @@ Handle routine customer support queries with speed, accuracy, and empathy.
             )
             knowledge_result = await search_knowledge_base(knowledge_input)
             
+            # Extract ticket ID safely (result may be "Ticket created successfully: <uuid>" or an error)
+            parts = ticket_result.split(': ', 1)
+            ticket_ref = parts[1] if len(parts) > 1 else "unknown"
+
             # Determine if escalation is needed
             should_escalate = self._should_escalate(user_message)
             escalation_reason = None
-            
+
             if should_escalate:
                 escalation_reason = self._get_escalation_reason(user_message)
                 escalation_input = EscalationInput(
-                    ticket_id=ticket_result.split(': ')[1],  # Extract ticket ID
+                    ticket_id=ticket_ref,
                     reason=escalation_reason
                 )
                 await escalate_to_human(escalation_input)
-            
+
             # Generate response based on knowledge base results
             if should_escalate:
-                response = f"I understand your concern. Your request has been escalated to our human support team. Reference: {ticket_result.split(': ')[1]}"
+                response = f"I understand your concern. Your request has been escalated to our human support team. Reference: {ticket_ref}"
             else:
-                response = self._generate_response(user_message, knowledge_result)
-            
+                response = await self._generate_response(user_message, knowledge_result, channel)
+
             # Send response
             response_input = ResponseInput(
-                ticket_id=ticket_result.split(': ')[1],  # Extract ticket ID
+                ticket_id=ticket_ref,
                 message=response,
                 channel=channel
             )
@@ -539,20 +550,32 @@ Handle routine customer support queries with speed, accuracy, and empathy.
         else:
             return 'other'
     
-    def _generate_response(self, user_message: str, knowledge_result: str) -> str:
+    async def _generate_response(self, user_message: str, knowledge_result: str, channel: str = "email") -> str:
         """
-        Generate a response based on the user message and knowledge base results.
-        
-        Args:
-            user_message: Customer's message
-            knowledge_result: Results from knowledge base search
-            
-        Returns:
-            Generated response
+        Generate a response using HuggingFace Qwen (free) or fall back to KB excerpt.
         """
-        # In a real implementation, we would use an LLM to generate the response
-        # based on the user message and knowledge base results
         if "no relevant documentation found" in knowledge_result.lower():
-            return "I'm sorry, I couldn't find specific information about your query. Let me connect you with a human agent who can assist you further."
-        else:
-            return f"Based on our documentation: {knowledge_result[:500]}... \n\nIs there anything else I can help you with?"
+            return (
+                "I'm sorry, I couldn't find specific information about your query. "
+                "Let me connect you with a human agent who can assist you further."
+            )
+
+        if self.qwen:
+            prompt = (
+                f"{self.system_prompt}\n\n"
+                f"Channel: {channel}\n\n"
+                f"Relevant documentation:\n{knowledge_result}\n\n"
+                f"Customer message: {user_message}\n\n"
+                f"Respond appropriately for the {channel} channel:"
+            )
+            try:
+                return await self.qwen.generate_with_retry(
+                    prompt=prompt,
+                    max_tokens=500,
+                    temperature=0.7,
+                )
+            except Exception as e:
+                self.logger.warning(f"Qwen generation failed, using KB fallback: {e}")
+
+        # Fallback: return first 500 chars of KB result
+        return f"Based on our documentation:\n\n{knowledge_result[:500]}\n\nIs there anything else I can help you with?"

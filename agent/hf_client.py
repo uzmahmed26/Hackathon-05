@@ -4,20 +4,26 @@ Handles communication with Hugging Face Inference API for Qwen 2.5 model.
 """
 
 import asyncio
+import os
 import time
 from typing import Dict, Any, Optional
 from huggingface_hub import InferenceClient
 
+# Default free-tier model — override via HF_MODEL env var
+DEFAULT_MODEL = os.getenv("HF_MODEL", "Qwen/Qwen2.5-7B-Instruct")
+
 
 class QwenClient:
-    def __init__(self, token: str):
+    def __init__(self, token: str, model: str = DEFAULT_MODEL):
         """
         Initialize the Qwen client with Hugging Face token.
-        
+
         Args:
             token: Hugging Face API token for authentication
+            model: HuggingFace model ID to use (defaults to Qwen/Qwen2.5-7B-Instruct)
         """
-        self.client = InferenceClient(token=token)
+        self.model = model
+        self.client = InferenceClient(model=model, token=token)
         self.rate_limit_delay = 1  # Delay in seconds between requests to handle rate limits
         self.last_request_time = 0
 
@@ -49,6 +55,7 @@ class QwenClient:
             # Using text generation task for the Qwen model
             response = self.client.text_generation(
                 prompt=prompt,
+                model=self.model,
                 max_new_tokens=max_tokens,
                 temperature=temperature,
                 return_full_text=False  # Only return the generated part

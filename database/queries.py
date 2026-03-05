@@ -32,8 +32,9 @@ class DatabaseManager:
         self.pool = await asyncpg.create_pool(
             dsn=self.dsn,
             min_size=1,
-            max_size=10,
-            command_timeout=60
+            max_size=5,
+            command_timeout=60,
+            ssl="require",
         )
     
     async def close(self):
@@ -203,15 +204,17 @@ class DatabaseManager:
             content = kwargs.get('content')
             tokens_used = kwargs.get('tokens_used')
             latency_ms = kwargs.get('latency_ms')
-            tool_calls = kwargs.get('tool_calls', [])
+            import json as _json
+            tool_calls_raw = kwargs.get('tool_calls', [])
+            tool_calls = _json.dumps(tool_calls_raw) if isinstance(tool_calls_raw, (list, dict)) else tool_calls_raw
             channel_message_id = kwargs.get('channel_message_id')
             delivery_status = kwargs.get('delivery_status', 'pending')
-            
+
             query = """
                 INSERT INTO messages (
                     conversation_id, channel, direction, role, content,
                     tokens_used, latency_ms, tool_calls, channel_message_id, delivery_status
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10)
                 RETURNING id
             """
             result = await conn.fetchrow(

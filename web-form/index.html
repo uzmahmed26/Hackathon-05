@@ -389,7 +389,16 @@
                     <p class="text-xs" style="color: #475569;">Ticket ID</p>
                     <p id="tr-id" class="font-mono text-xs font-semibold" style="color: #94a3b8;"></p>
                   </div>
-                  <span id="tr-status" class="text-xs font-semibold px-3 py-1 rounded-full"></span>
+                  <div class="flex items-center gap-2">
+                    <span id="tr-status" class="text-xs font-semibold px-3 py-1 rounded-full" style="cursor:default;" title="Current ticket status"></span>
+                    <button onclick="fetchTicket()" title="Refresh status"
+                      class="text-xs px-2 py-1 rounded-lg transition"
+                      style="border:1px solid #2e3650; color:#64748b; background:transparent;"
+                      onmouseover="this.style.background='#1e2433';this.style.color='#f97316'"
+                      onmouseout="this.style.background='transparent';this.style.color='#64748b'">
+                      ↻ Refresh
+                    </button>
+                  </div>
                 </div>
                 <div id="tr-messages" class="p-4 space-y-3 max-h-64 overflow-y-auto"></div>
               </div>
@@ -515,7 +524,7 @@
   </footer>
 
 <script>
-  const API_BASE = 'http://127.0.0.1:8000';
+  const API_BASE = 'http://localhost:8000';
 
   // ── Password toggle ────────────────────────────────────────
   function togglePassword(inputId, iconId) {

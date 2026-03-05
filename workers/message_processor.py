@@ -7,6 +7,7 @@ import asyncio
 import asyncpg
 import logging
 import json
+import os
 import sys
 import signal
 from contextlib import asynccontextmanager
@@ -19,7 +20,7 @@ from channels.gmail_handler import GmailHandler
 from channels.whatsapp_handler import WhatsAppHandler
 from infrastructure.redis_queue import RedisConsumer
 from database.queries import DatabaseManager
-from kafka_client import FTEKafkaConsumer, TOPICS
+from kafka_client import FTEKafkaConsumer, FTEKafkaProducer, TOPICS
 
 
 # Initialize logger
@@ -41,9 +42,12 @@ class UnifiedMessageProcessor:
         """Initialize the message processor with all required components."""
         self.agent = CustomerSuccessAgent()
         self.redis_consumer = RedisConsumer()
-        self.gmail_handler = GmailHandler(credentials_path="path/to/credentials.json")
+        self.gmail_handler = GmailHandler(
+            credentials_path=os.getenv("GMAIL_CREDENTIALS_PATH", "./credentials/gmail_credentials.json")
+        )
         self.whatsapp_handler = WhatsAppHandler()
-        self.db_manager = DatabaseManager(dsn="postgresql://username:password@localhost/customer_success_db")
+        _db_url = os.getenv("DATABASE_URL", "postgresql://fte_user:fte_password@localhost:5432/fte_db")
+        self.db_manager = DatabaseManager(dsn=_db_url)
         self.running = False
         
     async def __aenter__(self):
@@ -109,14 +113,54 @@ class UnifiedMessageProcessor:
         """
         Main message consumption loop.
 
-        Consumes from the Kafka topic ``fte.tickets.incoming`` using
-        FTEKafkaConsumer.  Messages are routed to ``process_message`` which
-        handles the full 10-step pipeline (resolve customer → agent → store
-        → metrics).  Failed messages are committed so the consumer doesn't
-        stall on poison pills; the error is logged and handle_error() is
-        called instead.
+        Runs Redis stream consumer and Kafka consumer concurrently.
+        Redis handles web form tickets; Kafka handles email/WhatsApp.
+        """
+        await asyncio.gather(
+            self._consume_redis_messages(),
+            self._consume_kafka_messages(),
+        )
 
-        Reconnects automatically on transient Kafka errors.
+    async def _consume_redis_messages(self):
+        """
+        Consume messages from Redis stream ``tickets:incoming``.
+        Web form submissions are published here by the API.
+        Reconnects automatically on transient errors.
+        """
+        redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
+        logger.info(f"Starting Redis stream consumer from 'tickets:incoming' ({redis_url})")
+
+        while self.running:
+            consumer = RedisConsumer(redis_url=redis_url)
+            try:
+                await consumer.start(
+                    stream="tickets:incoming",
+                    callback=self.process_message,
+                    group="fte-message-processor",
+                    consumer="worker-redis-1",
+                )
+                # consumer.start() spawns a background task; await it here
+                if consumer.consumer_task:
+                    await consumer.consumer_task
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(
+                    f"Redis consumer error: {e} — reconnecting in 5 s",
+                    exc_info=True,
+                )
+                await asyncio.sleep(5)
+            finally:
+                try:
+                    await consumer.stop()
+                except Exception:
+                    pass
+
+    async def _consume_kafka_messages(self):
+        """
+        Consume messages from Kafka topic ``fte.tickets.incoming``.
+        Email and WhatsApp messages arrive here.
+        Reconnects automatically on transient errors.
         """
         topic = TOPICS["tickets_incoming"]  # "fte.tickets.incoming"
         group_id = "fte-message-processor"
@@ -464,14 +508,18 @@ class UnifiedMessageProcessor:
                  channel_message_id, json.dumps(tool_calls or []), json.dumps(metadata or {}))
     
     async def publish_metrics(self, metrics: dict):
-        """Publish metrics to Redis metrics stream"""
+        """Publish metrics event to Kafka fte.metrics topic."""
         try:
-            # In a real implementation, we would publish to Redis
-            # For now, just log the metrics
-            logger.info(f"Metrics: {json.dumps(metrics)}")
+            producer = FTEKafkaProducer()
+            await producer.start()
+            try:
+                await producer.publish(TOPICS["metrics"], metrics)
+                logger.debug(f"Metrics published: {metrics.get('event_type')} / {metrics.get('channel')}")
+            finally:
+                await producer.stop()
         except Exception as e:
             logger.error(f"Failed to publish metrics: {e}")
-            # Don't fail the whole pipeline if metrics fail
+            # Non-fatal — log and continue
     
     async def handle_error(self, message: dict, error: Exception):
         """
@@ -483,10 +531,7 @@ class UnifiedMessageProcessor:
         3. Create escalation ticket
         4. Publish error metric
         """
-        logger.error(f"Message processing failed: {error}", extra={
-            'message': message,
-            'error_type': type(error).__name__
-        })
+        logger.error(f"Message processing failed: {error} | msg={message} | type={type(error).__name__}")
         
         # Send apologetic response
         channel = message.get('channel', 'unknown')
@@ -547,9 +592,15 @@ async def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
+    # Initialize (connect to DB, Redis, etc.)
+    await processor.initialize()
+
     # Start processing
     logger.info("Starting message processor worker...")
-    await processor.start()
+    try:
+        await processor.start()
+    finally:
+        await processor.cleanup()
 
 
 if __name__ == "__main__":
