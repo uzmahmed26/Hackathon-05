@@ -207,6 +207,36 @@
     </div>
   </header>
 
+  <!-- Top Navigation -->
+  <nav style="background:#151a28; border-bottom:1px solid #1e2433;">
+    <div class="max-w-5xl mx-auto px-6 flex gap-1 overflow-x-auto">
+      <button onclick="showPage('support')" id="nav-support"
+        class="px-4 py-3 text-sm font-medium whitespace-nowrap transition"
+        style="color:#f97316; border-bottom:2px solid #f97316;">
+        Support
+      </button>
+      <button onclick="showPage('dashboard')" id="nav-dashboard"
+        class="px-4 py-3 text-sm font-medium whitespace-nowrap transition"
+        style="color:#4a5568; border-bottom:2px solid transparent;">
+        Dashboard
+      </button>
+      <button onclick="showPage('tickets')" id="nav-tickets"
+        class="px-4 py-3 text-sm font-medium whitespace-nowrap transition"
+        style="color:#4a5568; border-bottom:2px solid transparent;">
+        Tickets
+      </button>
+      <button onclick="showPage('settings')" id="nav-settings"
+        class="px-4 py-3 text-sm font-medium whitespace-nowrap transition"
+        style="color:#4a5568; border-bottom:2px solid transparent;">
+        Settings
+      </button>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════
+       PAGE: SUPPORT (default)
+  ══════════════════════════════════════════════ -->
+  <div id="page-support">
   <main class="max-w-5xl mx-auto px-6 py-10">
 
     <!-- Page Title -->
@@ -232,6 +262,11 @@
               class="flex-1 py-3.5 text-sm font-medium transition"
               style="color: #4a5568; border-bottom: 2px solid transparent;">
               Track Ticket
+            </button>
+            <button onclick="showTab('analytics')" id="tab-analytics"
+              class="flex-1 py-3.5 text-sm font-medium transition"
+              style="color: #4a5568; border-bottom: 2px solid transparent;">
+              Analytics
             </button>
           </div>
 
@@ -407,6 +442,100 @@
             <div id="track-error" class="hidden mt-3 text-sm" style="color: #f87171;"></div>
           </div>
 
+          <!-- ── ANALYTICS DASHBOARD ── -->
+          <div id="view-analytics" class="hidden p-8 fade-in">
+
+            <!-- Loading spinner -->
+            <div id="analytics-loading" class="flex items-center justify-center py-12">
+              <div class="flex items-center gap-3">
+                <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" style="color:#f97316;">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-sm" style="color:#64748b;">Loading analytics…</span>
+              </div>
+            </div>
+
+            <!-- Dashboard content (hidden until data loads) -->
+            <div id="analytics-content" class="hidden space-y-5">
+
+              <!-- Header -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <h2 class="font-semibold text-white">Live Support Analytics</h2>
+                  <p class="text-xs mt-0.5" style="color:#475569;">Last 24 hours · auto-refreshes on open</p>
+                </div>
+                <button onclick="loadAnalytics()"
+                  class="text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                  style="border:1px solid #2e3650; color:#64748b;"
+                  onmouseover="this.style.color='#f97316';this.style.borderColor='#f97316'"
+                  onmouseout="this.style.color='#64748b';this.style.borderColor='#2e3650'">
+                  ↻ Refresh
+                </button>
+              </div>
+
+              <!-- KPI Cards -->
+              <div class="grid grid-cols-2 gap-3">
+                <div class="rounded-xl p-4" style="background:#1e2433; border:1px solid #2e3650;">
+                  <p class="text-xs mb-1" style="color:#64748b;">Total Tickets</p>
+                  <p id="kpi-total" class="text-2xl font-bold text-white">—</p>
+                  <p class="text-xs mt-1" style="color:#475569;">submitted today</p>
+                </div>
+                <div class="rounded-xl p-4" style="background:#1e2433; border:1px solid #2e3650;">
+                  <p class="text-xs mb-1" style="color:#64748b;">Resolved</p>
+                  <p id="kpi-resolved" class="text-2xl font-bold" style="color:#34d399;">—</p>
+                  <p id="kpi-resolve-rate" class="text-xs mt-1" style="color:#475569;">— resolve rate</p>
+                </div>
+                <div class="rounded-xl p-4" style="background:#1e2433; border:1px solid #2e3650;">
+                  <p class="text-xs mb-1" style="color:#64748b;">Open / Escalated</p>
+                  <p id="kpi-open" class="text-2xl font-bold" style="color:#fb923c;">—</p>
+                  <p class="text-xs mt-1" style="color:#475569;">awaiting response</p>
+                </div>
+                <div class="rounded-xl p-4" style="background:#1e2433; border:1px solid #2e3650;">
+                  <p class="text-xs mb-1" style="color:#64748b;">Avg Response</p>
+                  <p id="kpi-latency" class="text-2xl font-bold" style="color:#60a5fa;">—</p>
+                  <p class="text-xs mt-1" style="color:#475569;">milliseconds</p>
+                </div>
+              </div>
+
+              <!-- Channel Breakdown -->
+              <div class="rounded-xl p-5" style="background:#1e2433; border:1px solid #2e3650;">
+                <h3 class="text-sm font-semibold text-white mb-4">Messages by Channel</h3>
+                <div id="channel-bars" class="space-y-3"></div>
+              </div>
+
+              <!-- Ticket Status -->
+              <div class="rounded-xl p-5" style="background:#1e2433; border:1px solid #2e3650;">
+                <h3 class="text-sm font-semibold text-white mb-4">Ticket Status Distribution</h3>
+                <div id="status-bars" class="space-y-3"></div>
+              </div>
+
+              <!-- Performance -->
+              <div class="rounded-xl p-5" style="background:#1e2433; border:1px solid #2e3650;">
+                <h3 class="text-sm font-semibold text-white mb-4">Response Performance</h3>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <p class="text-xs mb-1" style="color:#64748b;">Avg Latency</p>
+                    <p id="perf-avg" class="text-xl font-bold text-white">—</p>
+                    <p class="text-xs mt-0.5" style="color:#475569;">ms per response</p>
+                  </div>
+                  <div>
+                    <p class="text-xs mb-1" style="color:#64748b;">P95 Latency</p>
+                    <p id="perf-p95" class="text-xl font-bold text-white">—</p>
+                    <p class="text-xs mt-0.5" style="color:#475569;">95th percentile</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Demo data notice -->
+              <div id="analytics-demo-notice" class="hidden text-xs text-center py-2.5 rounded-lg"
+                style="background:rgba(249,115,22,0.08); border:1px solid rgba(249,115,22,0.15); color:#94a3b8;">
+                Showing demo data · start the API server for live metrics
+              </div>
+
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -486,7 +615,11 @@
         <div class="rounded-2xl p-6" style="background: #151a28; border: 1px solid #1e2433;">
           <h3 class="font-semibold text-sm mb-4 text-white">Other Support Channels</h3>
           <div class="space-y-3">
-            <div class="flex items-center gap-3 text-xs" style="color: #94a3b8;">
+            <a href="mailto:support@techcorp.io"
+              class="flex items-center gap-3 text-xs rounded-xl p-3 transition cursor-pointer"
+              style="color:#94a3b8; background:transparent; border:1px solid #1e2433; text-decoration:none;"
+              onmouseover="this.style.background='#1e2433';this.style.borderColor='#fb923c'"
+              onmouseout="this.style.background='transparent';this.style.borderColor='#1e2433'">
               <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                 style="background: rgba(249,115,22,0.15);">
                 <svg class="w-4 h-4" style="color: #fb923c;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -494,11 +627,18 @@
                 </svg>
               </div>
               <div>
-                <p class="font-medium text-white">Email</p>
-                <p style="color: #475569;">support@techcorp.io</p>
+                <p class="font-medium text-white">Email Support</p>
+                <p style="color:#475569;">support@techcorp.io</p>
               </div>
-            </div>
-            <div class="flex items-center gap-3 text-xs" style="color: #94a3b8;">
+              <svg class="w-3 h-3 ml-auto shrink-0" style="color:#2e3650;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </a>
+            <a href="https://wa.me/18001234567" target="_blank" rel="noopener noreferrer"
+              class="flex items-center gap-3 text-xs rounded-xl p-3 transition cursor-pointer"
+              style="color:#94a3b8; background:transparent; border:1px solid #1e2433; text-decoration:none;"
+              onmouseover="this.style.background='#1e2433';this.style.borderColor='#34d399'"
+              onmouseout="this.style.background='transparent';this.style.borderColor='#1e2433'">
               <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                 style="background: rgba(16,185,129,0.15);">
                 <svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
@@ -508,15 +648,419 @@
               </div>
               <div>
                 <p class="font-medium text-white">WhatsApp</p>
-                <p style="color: #475569;">+1 (800) TECHCORP</p>
+                <p style="color:#475569;">+1 (800) TECHCORP</p>
               </div>
-            </div>
+              <svg class="w-3 h-3 ml-auto shrink-0" style="color:#2e3650;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </a>
           </div>
         </div>
 
       </div>
     </div>
   </main>
+
+  </div><!-- /page-support -->
+
+  <!-- ══════════════════════════════════════════════
+       PAGE: DASHBOARD
+  ══════════════════════════════════════════════ -->
+  <div id="page-dashboard" class="hidden">
+  <main class="max-w-5xl mx-auto px-6 py-8">
+
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-white">Dashboard</h1>
+      <p class="text-sm mt-1" style="color:#64748b;">Real-time overview of your AI support operations.</p>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="rounded-2xl p-5" style="background:#151a28; border:1px solid #1e2433;">
+        <p class="text-xs mb-1" style="color:#64748b;">Total Tickets</p>
+        <p id="db-total" class="text-3xl font-bold text-white">248</p>
+        <p class="text-xs mt-1" style="color:#34d399;">+12% today</p>
+      </div>
+      <div class="rounded-2xl p-5" style="background:#151a28; border:1px solid #1e2433;">
+        <p class="text-xs mb-1" style="color:#64748b;">Resolved</p>
+        <p id="db-resolved" class="text-3xl font-bold" style="color:#34d399;">201</p>
+        <p class="text-xs mt-1" style="color:#475569;">81% resolve rate</p>
+      </div>
+      <div class="rounded-2xl p-5" style="background:#151a28; border:1px solid #1e2433;">
+        <p class="text-xs mb-1" style="color:#64748b;">Open Now</p>
+        <p id="db-open" class="text-3xl font-bold" style="color:#fb923c;">14</p>
+        <p class="text-xs mt-1" style="color:#475569;">7 escalated</p>
+      </div>
+      <div class="rounded-2xl p-5" style="background:#151a28; border:1px solid #1e2433;">
+        <p class="text-xs mb-1" style="color:#64748b;">Avg Response</p>
+        <p class="text-3xl font-bold" style="color:#60a5fa;">&lt;5m</p>
+        <p class="text-xs mt-1" style="color:#475569;">1.8s AI latency</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Recent Tickets -->
+      <div class="lg:col-span-2 rounded-2xl overflow-hidden" style="background:#151a28; border:1px solid #1e2433;">
+        <div class="px-6 py-4 flex items-center justify-between" style="border-bottom:1px solid #1e2433;">
+          <h3 class="font-semibold text-white text-sm">Recent Tickets</h3>
+          <button onclick="showPage('tickets')" class="text-xs transition" style="color:#f97316;"
+            onmouseover="this.style.color='#ea580c'" onmouseout="this.style.color='#f97316'">View all →</button>
+        </div>
+        <div class="divide-y" style="border-color:#1e2433;">
+          <div class="px-6 py-3 flex items-center justify-between">
+            <div>
+              <p class="text-sm text-white">Login not working after update</p>
+              <p class="text-xs mt-0.5" style="color:#475569;">technical · 2 min ago</p>
+            </div>
+            <span class="text-xs px-2.5 py-1 rounded-full font-medium" style="background:rgba(249,115,22,0.15);color:#fb923c;">Open</span>
+          </div>
+          <div class="px-6 py-3 flex items-center justify-between">
+            <div>
+              <p class="text-sm text-white">Invoice for March not received</p>
+              <p class="text-xs mt-0.5" style="color:#475569;">billing · 8 min ago</p>
+            </div>
+            <span class="text-xs px-2.5 py-1 rounded-full font-medium" style="background:rgba(16,185,129,0.15);color:#34d399;">Resolved</span>
+          </div>
+          <div class="px-6 py-3 flex items-center justify-between">
+            <div>
+              <p class="text-sm text-white">API rate limit exceeded</p>
+              <p class="text-xs mt-0.5" style="color:#475569;">technical · 15 min ago</p>
+            </div>
+            <span class="text-xs px-2.5 py-1 rounded-full font-medium" style="background:rgba(251,146,60,0.15);color:#fb923c;">Escalated</span>
+          </div>
+          <div class="px-6 py-3 flex items-center justify-between">
+            <div>
+              <p class="text-sm text-white">How to export data to CSV?</p>
+              <p class="text-xs mt-0.5" style="color:#475569;">general · 22 min ago</p>
+            </div>
+            <span class="text-xs px-2.5 py-1 rounded-full font-medium" style="background:rgba(16,185,129,0.15);color:#34d399;">Resolved</span>
+          </div>
+          <div class="px-6 py-3 flex items-center justify-between">
+            <div>
+              <p class="text-sm text-white">Feature request: dark mode</p>
+              <p class="text-xs mt-0.5" style="color:#475569;">feedback · 35 min ago</p>
+            </div>
+            <span class="text-xs px-2.5 py-1 rounded-full font-medium" style="background:rgba(16,185,129,0.15);color:#34d399;">Resolved</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right sidebar -->
+      <div class="space-y-5">
+
+        <!-- Channel Status -->
+        <div class="rounded-2xl p-5" style="background:#151a28; border:1px solid #1e2433;">
+          <h3 class="font-semibold text-sm text-white mb-4">Channel Status</h3>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2" style="color:#94a3b8;">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+                Web Form
+              </div>
+              <span style="color:#34d399;">Active</span>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2" style="color:#94a3b8;">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+                Email (Gmail)
+              </div>
+              <span style="color:#34d399;">Active</span>
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2" style="color:#94a3b8;">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+                WhatsApp
+              </div>
+              <span style="color:#34d399;">Active</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="rounded-2xl p-5" style="background:#151a28; border:1px solid #1e2433;">
+          <h3 class="font-semibold text-sm text-white mb-4">Quick Actions</h3>
+          <div class="space-y-2">
+            <button onclick="showPage('support')"
+              class="w-full text-left text-xs px-4 py-2.5 rounded-lg transition text-white font-medium"
+              style="background:#f97316;"
+              onmouseover="this.style.background='#ea580c'" onmouseout="this.style.background='#f97316'">
+              + Submit New Ticket
+            </button>
+            <button onclick="showPage('tickets')"
+              class="w-full text-left text-xs px-4 py-2.5 rounded-lg transition"
+              style="border:1px solid #2e3650; color:#94a3b8;"
+              onmouseover="this.style.background='#1e2433'" onmouseout="this.style.background='transparent'">
+              View All Tickets
+            </button>
+            <button onclick="showPage('settings')"
+              class="w-full text-left text-xs px-4 py-2.5 rounded-lg transition"
+              style="border:1px solid #2e3650; color:#94a3b8;"
+              onmouseover="this.style.background='#1e2433'" onmouseout="this.style.background='transparent'">
+              Settings
+            </button>
+          </div>
+        </div>
+
+        <!-- AI Status -->
+        <div class="rounded-2xl p-5" style="background:#151a28; border:1px solid #1e2433;">
+          <h3 class="font-semibold text-sm text-white mb-3">AI Agent</h3>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+            <span class="text-xs" style="color:#34d399;">Running · GPT-4o</span>
+          </div>
+          <div class="space-y-1 text-xs" style="color:#475569;">
+            <p>Auto-resolve rate: <span class="text-white">81%</span></p>
+            <p>Escalation rate: <span class="text-white">3%</span></p>
+            <p>Avg sentiment: <span class="text-white">0.64</span></p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+  </div><!-- /page-dashboard -->
+
+  <!-- ══════════════════════════════════════════════
+       PAGE: TICKETS
+  ══════════════════════════════════════════════ -->
+  <div id="page-tickets" class="hidden">
+  <main class="max-w-5xl mx-auto px-6 py-8">
+
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-white">Tickets</h1>
+        <p class="text-sm mt-1" style="color:#64748b;">All support requests across channels.</p>
+      </div>
+      <button onclick="showPage('support')"
+        class="px-4 py-2 text-sm font-medium text-white rounded-lg transition"
+        style="background:#f97316;"
+        onmouseover="this.style.background='#ea580c'" onmouseout="this.style.background='#f97316'">
+        + New Ticket
+      </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex flex-wrap gap-3 mb-5">
+      <input type="text" id="ticket-search" placeholder="Search tickets…"
+        oninput="filterTickets()" class="input-field" style="max-width:240px;" />
+      <select id="filter-status" onchange="filterTickets()" class="input-field" style="max-width:140px;">
+        <option value="">All Status</option>
+        <option value="open">Open</option>
+        <option value="resolved">Resolved</option>
+        <option value="escalated">Escalated</option>
+      </select>
+      <select id="filter-priority" onchange="filterTickets()" class="input-field" style="max-width:140px;">
+        <option value="">All Priority</option>
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <select id="filter-category" onchange="filterTickets()" class="input-field" style="max-width:160px;">
+        <option value="">All Categories</option>
+        <option value="technical">Technical</option>
+        <option value="billing">Billing</option>
+        <option value="general">General</option>
+        <option value="bug_report">Bug Report</option>
+        <option value="feedback">Feedback</option>
+      </select>
+    </div>
+
+    <!-- Tickets Table -->
+    <div class="rounded-2xl overflow-hidden" style="background:#151a28; border:1px solid #1e2433;">
+      <table class="w-full text-xs">
+        <thead>
+          <tr style="border-bottom:1px solid #1e2433;">
+            <th class="text-left px-5 py-3 font-medium" style="color:#475569;">Subject</th>
+            <th class="text-left px-4 py-3 font-medium hidden md:table-cell" style="color:#475569;">Category</th>
+            <th class="text-left px-4 py-3 font-medium hidden md:table-cell" style="color:#475569;">Priority</th>
+            <th class="text-left px-4 py-3 font-medium" style="color:#475569;">Status</th>
+            <th class="text-left px-4 py-3 font-medium hidden lg:table-cell" style="color:#475569;">Channel</th>
+            <th class="text-left px-4 py-3 font-medium hidden lg:table-cell" style="color:#475569;">Date</th>
+            <th class="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody id="tickets-tbody">
+          <!-- filled by JS -->
+        </tbody>
+      </table>
+      <div id="tickets-empty" class="hidden text-center py-12 text-sm" style="color:#475569;">
+        No tickets match your filters.
+      </div>
+    </div>
+
+    <!-- Pagination row -->
+    <div class="flex items-center justify-between mt-4 text-xs" style="color:#475569;">
+      <span id="tickets-count">Showing 0 tickets</span>
+      <div class="flex gap-2">
+        <button id="pg-prev" onclick="changePage(-1)"
+          class="px-3 py-1.5 rounded-lg transition"
+          style="border:1px solid #2e3650; color:#94a3b8; opacity:0.35; cursor:not-allowed; pointer-events:none;"
+          onmouseover="this.style.background='#1e2433'" onmouseout="this.style.background='transparent'">
+          ← Prev
+        </button>
+        <span id="pg-info" class="px-3 py-1.5" style="color:#64748b;">Page 1</span>
+        <button id="pg-next" onclick="changePage(1)"
+          class="px-3 py-1.5 rounded-lg transition"
+          style="border:1px solid #2e3650; color:#94a3b8;"
+          onmouseover="this.style.background='#1e2433'" onmouseout="this.style.background='transparent'">
+          Next →
+        </button>
+      </div>
+    </div>
+
+  </main>
+  </div><!-- /page-tickets -->
+
+  <!-- ══════════════════════════════════════════════
+       PAGE: SETTINGS
+  ══════════════════════════════════════════════ -->
+  <div id="page-settings" class="hidden">
+  <main class="max-w-3xl mx-auto px-6 py-8">
+
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-white">Settings</h1>
+      <p class="text-sm mt-1" style="color:#64748b;">Manage your account and preferences.</p>
+    </div>
+
+    <div class="space-y-5">
+
+      <!-- Account Info -->
+      <div class="rounded-2xl p-6" style="background:#151a28; border:1px solid #1e2433;">
+        <h3 class="font-semibold text-white mb-4">Account</h3>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs mb-1.5" style="color:#94a3b8;">Display Name</label>
+            <input type="text" id="settings-name" class="input-field" style="max-width:320px;" placeholder="Your name" />
+          </div>
+          <div>
+            <label class="block text-xs mb-1.5" style="color:#94a3b8;">Email</label>
+            <input type="email" id="settings-email" class="input-field" style="max-width:320px;" placeholder="you@company.com" readonly
+              style="max-width:320px; opacity:0.6; cursor:not-allowed;" />
+          </div>
+          <button onclick="saveAccountSettings()"
+            class="px-5 py-2 text-sm font-medium text-white rounded-lg transition"
+            style="background:#f97316;"
+            onmouseover="this.style.background='#ea580c'" onmouseout="this.style.background='#f97316'">
+            Save Changes
+          </button>
+          <div id="settings-saved" class="hidden text-xs" style="color:#34d399;">Saved!</div>
+        </div>
+      </div>
+
+      <!-- API Configuration -->
+      <div class="rounded-2xl p-6" style="background:#151a28; border:1px solid #1e2433;">
+        <h3 class="font-semibold text-white mb-1">API Server</h3>
+        <p class="text-xs mb-4" style="color:#475569;">Change this if your backend runs on a different address.</p>
+        <div class="flex gap-3 items-end">
+          <div class="flex-1" style="max-width:360px;">
+            <label class="block text-xs mb-1.5" style="color:#94a3b8;">Base URL</label>
+            <input type="text" id="settings-api-base" class="input-field" placeholder="http://localhost:8000" />
+          </div>
+          <button onclick="saveApiBase()"
+            class="px-4 py-2.5 text-sm font-medium text-white rounded-lg transition"
+            style="background:#f97316;"
+            onmouseover="this.style.background='#ea580c'" onmouseout="this.style.background='#f97316'">
+            Save
+          </button>
+        </div>
+        <div id="api-saved" class="hidden mt-2 text-xs" style="color:#34d399;">API base URL updated!</div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="rounded-2xl p-6" style="background:#151a28; border:1px solid #1e2433;">
+        <h3 class="font-semibold text-white mb-4">Notifications</h3>
+        <div class="space-y-3">
+          <label class="flex items-center justify-between cursor-pointer">
+            <span class="text-sm" style="color:#94a3b8;">New ticket submitted</span>
+            <input type="checkbox" checked class="w-4 h-4 accent-orange-500" />
+          </label>
+          <label class="flex items-center justify-between cursor-pointer">
+            <span class="text-sm" style="color:#94a3b8;">Ticket escalated</span>
+            <input type="checkbox" checked class="w-4 h-4 accent-orange-500" />
+          </label>
+          <label class="flex items-center justify-between cursor-pointer">
+            <span class="text-sm" style="color:#94a3b8;">Daily analytics summary</span>
+            <input type="checkbox" class="w-4 h-4 accent-orange-500" />
+          </label>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="rounded-2xl p-6" style="background:#151a28; border:1px solid rgba(239,68,68,0.2);">
+        <h3 class="font-semibold mb-1" style="color:#f87171;">Danger Zone</h3>
+        <p class="text-xs mb-4" style="color:#475569;">These actions are irreversible.</p>
+        <button onclick="if(confirm('Sign out of this device?')) handleLogout()"
+          class="px-4 py-2 text-sm rounded-lg transition"
+          style="border:1px solid rgba(239,68,68,0.3); color:#f87171;"
+          onmouseover="this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.background='transparent'">
+          Sign Out
+        </button>
+      </div>
+
+    </div>
+  </main>
+  </div><!-- /page-settings -->
+
+  <!-- ══ TICKET DETAIL MODAL ══ -->
+  <div id="ticket-modal" class="hidden" style="position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(10,13,22,0.85);">
+    <div class="fade-in w-full mx-4 rounded-2xl overflow-hidden" style="max-width:560px;background:#151a28;border:1px solid #2e3650;">
+
+      <!-- Modal header -->
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid #1e2433;">
+        <div>
+          <p class="text-xs mb-0.5" style="color:#475569;">Ticket Details</p>
+          <p id="modal-id" class="font-mono text-sm font-bold" style="color:#fb923c;"></p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="modal-status" class="text-xs font-semibold px-3 py-1 rounded-full"></span>
+          <button onclick="closeTicketModal()" style="color:#475569;" class="transition"
+            onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#475569'">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Ticket meta -->
+      <div class="grid grid-cols-3 gap-3 px-6 py-4" style="border-bottom:1px solid #1e2433;">
+        <div>
+          <p class="text-xs mb-1" style="color:#475569;">Category</p>
+          <p id="modal-category" class="text-xs font-medium text-white"></p>
+        </div>
+        <div>
+          <p class="text-xs mb-1" style="color:#475569;">Priority</p>
+          <p id="modal-priority" class="text-xs font-semibold"></p>
+        </div>
+        <div>
+          <p class="text-xs mb-1" style="color:#475569;">Channel</p>
+          <p id="modal-channel" class="text-xs font-medium text-white"></p>
+        </div>
+      </div>
+
+      <!-- Subject -->
+      <div class="px-6 py-3" style="border-bottom:1px solid #1e2433;">
+        <p class="text-xs mb-1" style="color:#475569;">Subject</p>
+        <p id="modal-subject" class="text-sm text-white font-medium"></p>
+      </div>
+
+      <!-- Conversation -->
+      <div id="modal-messages" class="px-6 py-4 space-y-4 overflow-y-auto" style="max-height:300px;"></div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 flex justify-end" style="border-top:1px solid #1e2433;">
+        <button onclick="closeTicketModal()"
+          class="px-5 py-2 text-sm font-medium text-white rounded-lg transition"
+          style="background:#f97316;"
+          onmouseover="this.style.background='#ea580c'" onmouseout="this.style.background='#f97316'">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
 
   <!-- Footer -->
   <footer class="text-center text-xs py-8" style="color: #334155;">
@@ -669,11 +1213,15 @@
   function showTab(tab) {
     document.getElementById('view-form').classList.toggle('hidden', tab !== 'form');
     document.getElementById('view-track').classList.toggle('hidden', tab !== 'track');
+    document.getElementById('view-analytics').classList.toggle('hidden', tab !== 'analytics');
 
-    const activeStyle  = 'color: #f97316; border-bottom: 2px solid #f97316;';
+    const activeStyle   = 'color: #f97316; border-bottom: 2px solid #f97316;';
     const inactiveStyle = 'color: #4a5568; border-bottom: 2px solid transparent;';
-    document.getElementById('tab-form').style.cssText  = tab === 'form'  ? activeStyle : inactiveStyle;
-    document.getElementById('tab-track').style.cssText = tab === 'track' ? activeStyle : inactiveStyle;
+    document.getElementById('tab-form').style.cssText      = tab === 'form'      ? activeStyle : inactiveStyle;
+    document.getElementById('tab-track').style.cssText     = tab === 'track'     ? activeStyle : inactiveStyle;
+    document.getElementById('tab-analytics').style.cssText = tab === 'analytics' ? activeStyle : inactiveStyle;
+
+    if (tab === 'analytics') loadAnalytics();
   }
 
   // ── Validation helpers ─────────────────────────────────────
@@ -785,64 +1333,463 @@
 
   // ── Ticket tracking ────────────────────────────────────────
   function trackTicket(id) {
+    showPage('support');
     showTab('track');
     document.getElementById('track-input').value = id;
     fetchTicket();
   }
 
+  // ── Ticket Detail Modal ─────────────────────────────────────
+  async function openTicketModal(id) {
+    const modal = document.getElementById('ticket-modal');
+    modal.style.display = 'flex';
+    modal.classList.remove('hidden');
+
+    // Clear previous content
+    document.getElementById('modal-messages').innerHTML =
+      '<p class="text-xs text-center py-4" style="color:#475569;">Loading…</p>';
+
+    // Try live API first, then demo fallback
+    let data = null;
+    try {
+      const res = await fetch(`${API_BASE}/api/support/ticket/${encodeURIComponent(id)}`, { headers: buildHeaders() });
+      if (res.ok) data = await res.json();
+    } catch {}
+
+    if (!data) {
+      const demo = DEMO_TICKETS.find(t => t.id.toUpperCase() === id.toUpperCase()) || {
+        id, subject: 'Support request', category: 'general',
+        priority: 'medium', status: 'open', channel: 'web_form', date: new Date().toISOString(),
+      };
+      data = { ticket_id: demo.id, status: demo.status, subject: demo.subject,
+               category: demo.category, priority: demo.priority, channel: demo.channel,
+               messages: buildDemoMessages(demo) };
+    }
+
+    // Populate header
+    document.getElementById('modal-id').textContent      = data.ticket_id || id;
+    document.getElementById('modal-subject').textContent = data.subject   || '—';
+    document.getElementById('modal-category').textContent = (data.category || '—').replace('_', ' ');
+    document.getElementById('modal-channel').textContent  = CHANNEL_LABEL[data.channel] || data.channel || '—';
+
+    const st = (data.status || 'open').toLowerCase();
+    const statusStyles = {
+      open:      'background:rgba(249,115,22,0.15);color:#fb923c;',
+      resolved:  'background:rgba(16,185,129,0.15);color:#34d399;',
+      escalated: 'background:rgba(248,113,113,0.15);color:#f87171;',
+      closed:    'background:rgba(100,116,139,0.15);color:#94a3b8;',
+    };
+    const statusEl = document.getElementById('modal-status');
+    statusEl.style.cssText = statusStyles[st] || statusStyles.open;
+    statusEl.textContent   = st.charAt(0).toUpperCase() + st.slice(1);
+
+    const priorityColors = { critical:'#f87171', high:'#fb923c', medium:'#fbbf24', low:'#60a5fa' };
+    const prEl = document.getElementById('modal-priority');
+    prEl.textContent  = (data.priority || 'medium');
+    prEl.style.color  = priorityColors[data.priority] || '#94a3b8';
+
+    // Render conversation
+    const messages = data.messages || [];
+    document.getElementById('modal-messages').innerHTML = messages.length ? messages.map(m => `
+      <div class="flex gap-3">
+        <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
+          style="${m.role==='agent'  ? 'background:rgba(249,115,22,0.2);color:#fb923c;'
+                : m.role==='system' ? 'background:rgba(100,116,139,0.2);color:#64748b;'
+                                    : 'background:rgba(16,185,129,0.2);color:#34d399;'}">
+          ${m.role==='agent' ? 'AI' : m.role==='system' ? '⚙' : 'You'}
+        </div>
+        <div class="flex-1">
+          <p class="text-xs leading-relaxed" style="color:#cbd5e1;">${m.content}</p>
+          <p class="text-xs mt-1" style="color:#475569;">${new Date(m.timestamp).toLocaleString()}</p>
+        </div>
+      </div>`).join('')
+    : '<p class="text-xs" style="color:#475569;">No messages yet.</p>';
+  }
+
+  function closeTicketModal() {
+    const modal = document.getElementById('ticket-modal');
+    modal.style.display = 'none';
+    modal.classList.add('hidden');
+  }
+
+  // Close modal on backdrop click
+  document.getElementById('ticket-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeTicketModal();
+  });
+
+  // Close modal on Escape key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeTicketModal();
+  });
+
+  // Build a demo conversation from a ticket object
+  function buildDemoMessages(ticket) {
+    const DEMO_REPLIES = {
+      technical: 'I can see the issue you\'re experiencing. Our AI has diagnosed the root cause and is applying a fix. Please try clearing your cache and re-logging in.',
+      billing:   'Thank you for reaching out about your billing concern. I\'ve reviewed your account and the details have been updated. You should receive a confirmation email shortly.',
+      general:   'Great question! Here\'s a step-by-step guide to help you. If you need further assistance, feel free to reply to this ticket.',
+      bug_report:'Thank you for the detailed report. Our engineering team has been notified and a fix is being prioritized. We\'ll update you when it\'s deployed.',
+      feedback:  'We really appreciate your feedback! It has been forwarded to our product team and will be considered in the next planning cycle.',
+    };
+    const reply = DEMO_REPLIES[ticket.category] || DEMO_REPLIES.general;
+    const base = new Date(ticket.date).getTime() || Date.now() - 600000;
+    const msgs = [
+      { role: 'system',  content: `Ticket ${ticket.id} created · Channel: ${CHANNEL_LABEL[ticket.channel] || ticket.channel} · Priority: ${ticket.priority}`, timestamp: base },
+      { role: 'user',    content: ticket.subject, timestamp: base + 2000 },
+      { role: 'agent',   content: reply,           timestamp: base + 8000 },
+    ];
+    if (ticket.status === 'resolved') {
+      msgs.push({ role: 'system', content: 'Ticket marked as Resolved by AI agent.', timestamp: base + 15000 });
+    } else if (ticket.status === 'escalated') {
+      msgs.push({ role: 'system', content: 'Ticket escalated to a human agent. You will be contacted within 30 minutes.', timestamp: base + 12000 });
+    }
+    return msgs;
+  }
+
+  function renderTicketResult(data) {
+    document.getElementById('tr-id').textContent = data.ticket_id || data.id || '—';
+
+    const statusEl = document.getElementById('tr-status');
+    const statusStyles = {
+      open:      'background:rgba(249,115,22,0.15);color:#fb923c;',
+      resolved:  'background:rgba(16,185,129,0.15);color:#34d399;',
+      closed:    'background:rgba(100,116,139,0.15);color:#94a3b8;',
+      escalated: 'background:rgba(248,113,113,0.15);color:#f87171;',
+    };
+    const st = (data.status || 'open').toLowerCase();
+    statusEl.style.cssText = statusStyles[st] || statusStyles.open;
+    statusEl.textContent   = st.charAt(0).toUpperCase() + st.slice(1);
+
+    const messages = data.messages || buildDemoMessages(data);
+    document.getElementById('tr-messages').innerHTML = messages.map(m => `
+      <div class="flex gap-3">
+        <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
+          style="${m.role === 'agent'  ? 'background:rgba(249,115,22,0.2);color:#fb923c;'
+                : m.role === 'system' ? 'background:rgba(100,116,139,0.2);color:#64748b;'
+                                      : 'background:rgba(16,185,129,0.2);color:#34d399;'}">
+          ${m.role === 'agent' ? 'AI' : m.role === 'system' ? '⚙' : 'You'}
+        </div>
+        <div class="flex-1">
+          <p class="text-xs" style="color:#cbd5e1;">${m.content}</p>
+          <p class="text-xs mt-1" style="color:#475569;">${new Date(m.timestamp).toLocaleString()}</p>
+        </div>
+      </div>
+    `).join('');
+
+    document.getElementById('ticket-result').classList.remove('hidden');
+  }
+
   async function fetchTicket() {
-    const id = document.getElementById('track-input').value.trim();
+    const id       = document.getElementById('track-input').value.trim();
     const result   = document.getElementById('ticket-result');
     const trackErr = document.getElementById('track-error');
     result.classList.add('hidden');
     trackErr.classList.add('hidden');
 
-    if (!id) { trackErr.textContent = 'Please enter a ticket ID.'; trackErr.classList.remove('hidden'); return; }
+    if (!id) {
+      trackErr.textContent = 'Please enter a ticket ID.';
+      trackErr.classList.remove('hidden');
+      return;
+    }
 
+    // 1. Try live API
     try {
       const res = await fetch(`${API_BASE}/api/support/ticket/${encodeURIComponent(id)}`, {
         headers: buildHeaders(),
       });
-      if (!res.ok) throw new Error('Ticket not found.');
-      const data = await res.json();
+      if (res.ok) {
+        renderTicketResult(await res.json());
+        return;
+      }
+    } catch {}
 
-      document.getElementById('tr-id').textContent = data.ticket_id;
+    // 2. Fall back to demo tickets (match by ID or subject keyword)
+    const idUpper = id.toUpperCase();
+    let demo = DEMO_TICKETS.find(t =>
+      t.id.toUpperCase() === idUpper ||
+      t.subject.toLowerCase().includes(id.toLowerCase())
+    );
 
-      const statusEl = document.getElementById('tr-status');
-      const statusStyles = {
-        open:      'background: rgba(249,115,22,0.15); color: #fb923c;',
-        closed:    'background: rgba(100,116,139,0.15); color: #94a3b8;',
-        escalated: 'background: rgba(251,146,60,0.15); color: #fb923c;',
+    // 3. If nothing matches, generate a generic demo result
+    if (!demo) {
+      demo = {
+        id: id, subject: 'Your support request', category: 'general',
+        priority: 'medium', status: 'open', channel: 'web_form',
+        date: new Date().toISOString(),
       };
-      statusEl.style.cssText = statusStyles[data.status] || statusStyles.closed;
-      statusEl.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
-
-      const msgContainer = document.getElementById('tr-messages');
-      msgContainer.innerHTML = data.messages.map(m => `
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
-            style="${m.role === 'agent'  ? 'background:rgba(249,115,22,0.2);color:#fb923c;'
-                  : m.role === 'system' ? 'background:rgba(100,116,139,0.2);color:#64748b;'
-                                        : 'background:rgba(16,185,129,0.2);color:#34d399;'}">
-            ${m.role === 'agent' ? 'AI' : m.role === 'system' ? '⚙' : 'You'}
-          </div>
-          <div class="flex-1">
-            <p class="text-xs" style="color:#cbd5e1;">${m.content}</p>
-            <p class="text-xs mt-1" style="color:#475569;">${new Date(m.timestamp).toLocaleString()}</p>
-          </div>
-        </div>
-      `).join('');
-
-      result.classList.remove('hidden');
-    } catch (err) {
-      trackErr.textContent = err.message;
-      trackErr.classList.remove('hidden');
     }
+
+    renderTicketResult({ ticket_id: demo.id, status: demo.status, ...demo });
   }
 
   document.getElementById('track-input')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') fetchTicket();
   });
+
+  // ── Page navigation ────────────────────────────────────────
+  const PAGES = ['support', 'dashboard', 'tickets', 'settings'];
+
+  function showPage(page) {
+    PAGES.forEach(p => {
+      document.getElementById('page-' + p).classList.toggle('hidden', p !== page);
+      const btn = document.getElementById('nav-' + p);
+      if (btn) btn.style.cssText = p === page
+        ? 'color:#f97316; border-bottom:2px solid #f97316;'
+        : 'color:#4a5568; border-bottom:2px solid transparent;';
+    });
+    if (page === 'tickets')  initTickets();
+    if (page === 'settings') initSettings();
+    if (page === 'dashboard') fetchDashboardMetrics();
+    window.scrollTo(0, 0);
+  }
+
+  // ── Dashboard live metrics ──────────────────────────────────
+  async function fetchDashboardMetrics() {
+    try {
+      const r = await fetch(`${API_BASE}/metrics`, { headers: buildHeaders() });
+      if (!r.ok) return;
+      const d = await r.json();
+      const t = d.tickets;
+      const total = (t.open||0) + (t.escalated||0) + (t.resolved||0);
+      document.getElementById('db-total').textContent    = total.toLocaleString();
+      document.getElementById('db-resolved').textContent = (t.resolved||0).toLocaleString();
+      document.getElementById('db-open').textContent     = (t.open||0).toLocaleString();
+    } catch {}
+  }
+
+  // ── Tickets page ────────────────────────────────────────────
+  const DEMO_TICKETS = [
+    { id:'TK-001', subject:'Login not working after update',   category:'technical',  priority:'high',     status:'open',      channel:'web_form', date:'2026-03-06 09:42' },
+    { id:'TK-002', subject:'Invoice for March not received',   category:'billing',    priority:'medium',   status:'resolved',  channel:'email',    date:'2026-03-06 09:35' },
+    { id:'TK-003', subject:'API rate limit exceeded',          category:'technical',  priority:'critical', status:'escalated', channel:'whatsapp', date:'2026-03-06 09:28' },
+    { id:'TK-004', subject:'How to export data to CSV?',       category:'general',    priority:'low',      status:'resolved',  channel:'web_form', date:'2026-03-06 09:20' },
+    { id:'TK-005', subject:'Feature request: dark mode',       category:'feedback',   priority:'low',      status:'resolved',  channel:'email',    date:'2026-03-06 09:10' },
+    { id:'TK-006', subject:'Payment failed on checkout',       category:'billing',    priority:'high',     status:'open',      channel:'whatsapp', date:'2026-03-06 08:55' },
+    { id:'TK-007', subject:'Dashboard shows wrong stats',      category:'bug_report', priority:'medium',   status:'open',      channel:'web_form', date:'2026-03-06 08:40' },
+    { id:'TK-008', subject:'Can\'t upload files over 10MB',    category:'technical',  priority:'medium',   status:'resolved',  channel:'email',    date:'2026-03-06 08:22' },
+    { id:'TK-009', subject:'Need to update billing address',   category:'billing',    priority:'low',      status:'resolved',  channel:'web_form', date:'2026-03-06 08:10' },
+    { id:'TK-010', subject:'SSO integration not connecting',   category:'technical',  priority:'critical', status:'escalated', channel:'email',    date:'2026-03-06 07:58' },
+    { id:'TK-011', subject:'Webhook not firing on new order',  category:'technical',  priority:'high',     status:'open',      channel:'web_form', date:'2026-03-06 07:45' },
+    { id:'TK-012', subject:'Request for custom report',        category:'feedback',   priority:'low',      status:'resolved',  channel:'whatsapp', date:'2026-03-06 07:30' },
+  ];
+
+  const PAGE_SIZE = 8;
+  let ticketPage = 0;
+
+  const STATUS_STYLE = {
+    open:      'background:rgba(249,115,22,0.15);color:#fb923c;',
+    resolved:  'background:rgba(16,185,129,0.15);color:#34d399;',
+    escalated: 'background:rgba(248,113,113,0.15);color:#f87171;',
+  };
+  const PRIORITY_STYLE = {
+    critical: 'color:#f87171;',
+    high:     'color:#fb923c;',
+    medium:   'color:#fbbf24;',
+    low:      'color:#60a5fa;',
+  };
+  const CHANNEL_LABEL = { web_form:'Web Form', email:'Email', whatsapp:'WhatsApp' };
+
+  function getFilteredTickets() {
+    const q    = (document.getElementById('ticket-search')?.value  || '').toLowerCase();
+    const st   = document.getElementById('filter-status')?.value   || '';
+    const pr   = document.getElementById('filter-priority')?.value || '';
+    const cat  = document.getElementById('filter-category')?.value || '';
+    return DEMO_TICKETS.filter(t =>
+      (!q   || t.subject.toLowerCase().includes(q) || t.id.toLowerCase().includes(q)) &&
+      (!st  || t.status === st) &&
+      (!pr  || t.priority === pr) &&
+      (!cat || t.category === cat)
+    );
+  }
+
+  function renderTickets(list) {
+    const tbody = document.getElementById('tickets-tbody');
+    const empty = document.getElementById('tickets-empty');
+    const start = ticketPage * PAGE_SIZE;
+    const slice = list.slice(start, start + PAGE_SIZE);
+
+    if (!list.length) {
+      tbody.innerHTML = '';
+      empty.classList.remove('hidden');
+    } else {
+      empty.classList.add('hidden');
+      tbody.innerHTML = slice.map(t => `
+        <tr class="transition" style="border-top:1px solid #1e2433;"
+          onmouseover="this.style.background='#1a2035'" onmouseout="this.style.background='transparent'">
+          <td class="px-5 py-3">
+            <p class="text-white font-medium" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.subject}</p>
+            <p class="text-xs mt-0.5" style="color:#475569;">${t.id}</p>
+          </td>
+          <td class="px-4 py-3 hidden md:table-cell" style="color:#64748b;">${t.category.replace('_',' ')}</td>
+          <td class="px-4 py-3 hidden md:table-cell font-semibold" style="${PRIORITY_STYLE[t.priority]||''}">${t.priority}</td>
+          <td class="px-4 py-3">
+            <span class="px-2.5 py-1 rounded-full font-medium" style="${STATUS_STYLE[t.status]||''}">${t.status}</span>
+          </td>
+          <td class="px-4 py-3 hidden lg:table-cell" style="color:#64748b;">${CHANNEL_LABEL[t.channel]||t.channel}</td>
+          <td class="px-4 py-3 hidden lg:table-cell" style="color:#475569;">${t.date}</td>
+          <td class="px-4 py-3">
+            <button onclick="openTicketModal('${t.id}')"
+              class="text-xs px-2.5 py-1 rounded-lg transition"
+              style="border:1px solid #2e3650;color:#64748b;"
+              onmouseover="this.style.color='#f97316';this.style.borderColor='#f97316'"
+              onmouseout="this.style.color='#64748b';this.style.borderColor='#2e3650'">
+              View
+            </button>
+          </td>
+        </tr>`).join('');
+    }
+
+    const total = list.length;
+    document.getElementById('tickets-count').textContent =
+      `Showing ${Math.min(start+1,total)}–${Math.min(start+PAGE_SIZE,total)} of ${total} ticket${total!==1?'s':''}`;
+    document.getElementById('pg-info').textContent = `Page ${ticketPage+1} of ${Math.max(1,Math.ceil(total/PAGE_SIZE))}`;
+    // Prev button
+    const prevBtn = document.getElementById('pg-prev');
+    const isPrevDisabled = ticketPage === 0;
+    prevBtn.style.opacity        = isPrevDisabled ? '0.35' : '1';
+    prevBtn.style.cursor         = isPrevDisabled ? 'not-allowed' : 'pointer';
+    prevBtn.style.pointerEvents  = isPrevDisabled ? 'none' : 'auto';
+
+    // Next button
+    const nextBtn = document.getElementById('pg-next');
+    const isNextDisabled = start + PAGE_SIZE >= total;
+    nextBtn.style.opacity        = isNextDisabled ? '0.35' : '1';
+    nextBtn.style.cursor         = isNextDisabled ? 'not-allowed' : 'pointer';
+    nextBtn.style.pointerEvents  = isNextDisabled ? 'none' : 'auto';
+  }
+
+  function filterTickets() {
+    ticketPage = 0;
+    renderTickets(getFilteredTickets());
+  }
+
+  function changePage(dir) {
+    const list = getFilteredTickets();
+    const maxPage = Math.max(0, Math.ceil(list.length / PAGE_SIZE) - 1);
+    if (dir < 0 && ticketPage === 0) return;
+    if (dir > 0 && ticketPage >= maxPage) return;
+    ticketPage = Math.min(Math.max(0, ticketPage + dir), maxPage);
+    renderTickets(list);
+  }
+
+  function initTickets() {
+    ticketPage = 0;
+    renderTickets(DEMO_TICKETS);
+  }
+
+  // ── Settings page ────────────────────────────────────────────
+  function initSettings() {
+    const user = getUser();
+    if (user) {
+      document.getElementById('settings-name').value  = user.name  || '';
+      document.getElementById('settings-email').value = user.email || '';
+    }
+    document.getElementById('settings-api-base').value = API_BASE;
+  }
+
+  function saveAccountSettings() {
+    const user = getUser() || {};
+    user.name = document.getElementById('settings-name').value.trim();
+    try { localStorage.setItem('auth_user', JSON.stringify(user)); } catch {}
+    applyAuthState();
+    const msg = document.getElementById('settings-saved');
+    msg.classList.remove('hidden');
+    setTimeout(() => msg.classList.add('hidden'), 2000);
+  }
+
+  function saveApiBase() {
+    const val = document.getElementById('settings-api-base').value.trim();
+    if (val) {
+      window.API_BASE = val;
+      // Persist across refresh
+      try { localStorage.setItem('api_base', val); } catch {}
+    }
+    const msg = document.getElementById('api-saved');
+    msg.classList.remove('hidden');
+    setTimeout(() => msg.classList.add('hidden'), 2000);
+  }
+
+  // Restore API base from storage on load
+  try {
+    const saved = localStorage.getItem('api_base');
+    if (saved) window.API_BASE = saved;
+  } catch {}
+
+  // ── Analytics ──────────────────────────────────────────────
+  function renderBar(label, value, total, color) {
+    const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+    return `<div>
+      <div class="flex justify-between text-xs mb-1.5">
+        <span style="color:#94a3b8;">${label}</span>
+        <span style="color:#e2e8f0;">${value.toLocaleString()} <span style="color:#475569;">(${pct}%)</span></span>
+      </div>
+      <div class="h-2 rounded-full overflow-hidden" style="background:#0f1320;">
+        <div class="h-2 rounded-full" style="width:${pct}%; background:${color}; transition:width 0.7s ease;"></div>
+      </div>
+    </div>`;
+  }
+
+  async function loadAnalytics() {
+    const loading = document.getElementById('analytics-loading');
+    const content = document.getElementById('analytics-content');
+    loading.classList.remove('hidden');
+    content.classList.add('hidden');
+
+    let metrics = null, isDemo = false;
+
+    try {
+      const [r1] = await Promise.all([
+        fetch(`${API_BASE}/metrics`, { headers: buildHeaders() }),
+      ]);
+      if (r1.ok) {
+        metrics = await r1.json();
+      } else {
+        throw new Error('API unavailable');
+      }
+    } catch {
+      isDemo = true;
+      metrics = {
+        messages: { total: 248, by_channel: { email: 97, whatsapp: 82, web_form: 69 } },
+        performance: { avg_latency_ms: 1840, p95_latency_ms: 4200 },
+        tickets: { open: 14, escalated: 7, resolved: 201 }
+      };
+    }
+
+    // KPIs
+    const t = metrics.tickets;
+    const ticketTotal = (t.open || 0) + (t.escalated || 0) + (t.resolved || 0);
+    const resolveRate = ticketTotal > 0 ? Math.round(((t.resolved || 0) / ticketTotal) * 100) : 0;
+
+    document.getElementById('kpi-total').textContent       = ticketTotal.toLocaleString();
+    document.getElementById('kpi-resolved').textContent    = (t.resolved || 0).toLocaleString();
+    document.getElementById('kpi-resolve-rate').textContent = `${resolveRate}% resolve rate`;
+    document.getElementById('kpi-open').textContent        = ((t.open || 0) + (t.escalated || 0)).toLocaleString();
+    document.getElementById('kpi-latency').textContent     = Math.round(metrics.performance.avg_latency_ms || 0).toLocaleString();
+    document.getElementById('perf-avg').textContent        = `${Math.round(metrics.performance.avg_latency_ms || 0).toLocaleString()} ms`;
+    document.getElementById('perf-p95').textContent        = `${Math.round(metrics.performance.p95_latency_ms || 0).toLocaleString()} ms`;
+
+    // Channel bars
+    const msgTotal = metrics.messages.total || 1;
+    const ch = metrics.messages.by_channel;
+    document.getElementById('channel-bars').innerHTML = [
+      renderBar('Email',     ch.email     || 0, msgTotal, '#fb923c'),
+      renderBar('WhatsApp',  ch.whatsapp  || 0, msgTotal, '#34d399'),
+      renderBar('Web Form',  ch.web_form  || 0, msgTotal, '#60a5fa'),
+    ].join('');
+
+    // Ticket status bars
+    document.getElementById('status-bars').innerHTML = [
+      renderBar('Resolved',  t.resolved  || 0, ticketTotal, '#34d399'),
+      renderBar('Open',      t.open      || 0, ticketTotal, '#fb923c'),
+      renderBar('Escalated', t.escalated || 0, ticketTotal, '#f87171'),
+    ].join('');
+
+    // Demo notice
+    document.getElementById('analytics-demo-notice').classList.toggle('hidden', !isDemo);
+
+    loading.classList.add('hidden');
+    content.classList.remove('hidden');
+  }
 </script>
 
 </body>
