@@ -32,9 +32,16 @@ def ping(url, timeout=3):
 def api_get(path):
     try:
         with urllib.request.urlopen(f"http://localhost:8000{path}", timeout=4) as r:
-            return json.loads(r.read()), r.status
+            body = r.read()
+            try:
+                return json.loads(body), r.status
+            except:
+                return {}, r.status   # HTML pages (e.g. /docs) — still reachable
     except urllib.error.HTTPError as e:
-        return json.loads(e.read()), e.code
+        try:
+            return json.loads(e.read()), e.code
+        except:
+            return {}, e.code
     except:
         return None, 0
 
